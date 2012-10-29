@@ -10,7 +10,7 @@
    :author ""
    :licence ""
    :description "media-library"
-   :depends-on (:weblocks :weblocks-utils)
+   :depends-on (:weblocks :weblocks-utils :yaclml)
    :components ((:file "media-library")
      (:module conf
       :components ((:file "stores"))

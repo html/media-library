@@ -1,4 +1,6 @@
+firephp/firephp.asd
 weblocks/weblocks.asd
+firephp/firephp-tests.asd
 weblocks/weblocks-test.asd
 weblocks/weblocks-scripts.asd
 weblocks/weblocks-store-test.asd

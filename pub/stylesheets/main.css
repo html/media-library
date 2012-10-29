@@ -174,7 +174,7 @@ input[type=hidden]
 /* Common styles for form, and data */
 .data, .form
 {
-  width: 27em;
+  width: 45em;
 }
 
 /* Align text that spans in multiple lines in data and form views */ 
@@ -268,5 +268,22 @@ div.empty p span.caption
   content:" (click to expand)";
   font-size:small;
   color:gray;
+}
+
+.textarea-initialization {
+  clear:both;
+}
+
+.charleft {
+  text-align:right;
+  float:right;
+}
+
+li.text {
+  display: inline-block;
+}
+
+li.text textarea {
+  float: right;
 }
 
