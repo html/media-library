@@ -1,0 +1,7 @@
+PROJECT_ROOT=`dirname $0`/../
+SWANK_PORT=4005
+WEBLOCKS_PORT=5555
+echo "Project root: $PROJECT_ROOT"
+echo "DELETING old media-library fasl"
+find $PROJECT_ROOT/src  -iname \*.fasl -delete
+sbcl --userinit $PROJECT_ROOT/media-library.sbclrc $PROJECT_ROOT $WEBLOCKS_PORT $SWANK_PORT
