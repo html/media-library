@@ -1,0 +1,1 @@
+dists/quicklisp/software/weblocks-20120909-git/contrib/yarek/examples/weblocks-demo-popover/weblocks-demo-popover.asd

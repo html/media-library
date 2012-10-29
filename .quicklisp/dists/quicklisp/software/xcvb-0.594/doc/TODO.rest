@@ -1,0 +1,1535 @@
+.. ; -*- mode:rst; -*-
+
+=============
+TODO for XCVB
+=============
+
+Future improvements planned for XCVB.
+
+See the first section, `Current Developments [V1]`_,
+for what are hot topics you could be working on right now.
+
+Further sections are mostly for longer term projects
+and background on the design and ultimate goals of XCVB.
+
+
+.. contents::
+..
+    1  Current Developments [V1]
+      1.1  Immediate TODO [V1]
+      1.2  Top ITA TODO [V1]
+      1.3  Enhancing Build Speed [V2]
+      1.4  Other Top TODO Items [V1]
+    2  Roadmap [V1]
+    3  Usability Issues [V1]
+      3.1  Migration from ASDF [V2]
+      3.2  Non-enforcing builds [V2]
+      3.3  In-image loading [V2]
+      3.4  Centralized Dependency Declaration [V1]
+      3.5  Exploded File Dependencies [V1]
+      3.6  Environment Variables [V2]
+      3.7  Computed Dependencies [V2]
+      3.8  Lack of Manual [V2]
+      3.9  Producing Executables [V3]
+    4  Features [V2]
+      4.1   Improve Makefile backend [V2]
+      4.2   Abstract Away Paths [V2]
+      4.3   Initialization and Finalization [V2]
+      4.4   Tests [V2]
+      4.5   Compilation Units [V2]
+      4.6   Dependency grovelling [V2]
+      4.7   Bootstrap [V3]
+      4.8   Same source, multiple compilers [V4]
+      4.9   Correctly handling C libraries [V4]
+      4.10  Bug hunting [V5]
+      4.11  Ideas from jknight [V2]
+      4.12  Dynamic Dependencies [V2]
+      4.13  Cryptographic Checksum [V1]
+      4.14  Template Instantiations [V5]
+      4.15  Configuration Management [V2]
+      4.16  Better ASDF backend [V2]
+      4.17  Better Debugging [V3]
+      4.18  Support common ASDF Extensions [V1]
+    5  Internals [V4]
+      5.1  Type-Checking [V4]
+      5.2  Error handling [V4]
+      5.3  Declarative model [V4]
+      5.4  Propagation Networks [V4]
+    6  Advanced Build Issues [V3]
+      6.1   Read the classics [V3]
+      6.2   distclc [V3]
+      6.3   clcache [V3]
+      6.4   XCVB as its own backend [V3]
+      6.5   Push for better control of file source location [V3]
+      6.6   Push for better control of in-file source location [V4]
+      6.7   Push for more determinism in Lisp compilers [V5]
+      6.8   Push for First-class PCLSRing in Lisp compilers [V5]
+      6.9   Support dependencies for modules written in other languages [V4]
+      6.10  Mixing and Matching compilers [V5]
+      6.11  Constraint-based goal language [V6]
+    7  A Real Module System [V3]
+      7.1  Syntax Extensions [V3]
+      7.2  Automatic Package management [V5]
+      7.3  Better Namespace Management [V5]
+      7.4  Hooks into the Module Naming Resolution [V5]
+      7.5  Packaging and Distribution [V5]
+      7.6  More bibliography [V5]
+
+
+Current Developments [V1]
+=========================
+
+Immediate TODO [V1]
+-------------------
+
+These are the very next steps to be taken:
+
+  * find memory leak in hu.dwim.stefil or the way we use it.
+
+  * add quicklisp support and convince Xach to use it.
+
+  * implement around-compile and compile-check for xcvb.
+
+  * Fix dependency management so it all happens in one place, preferrably under Lisp control
+
+  * Setup: read xcvb-driver, asdf and provided setup files when extracting the features...
+    This brings some circularity issues to the foreground. Ouch.
+
+  * File Encoding:
+
+    + Port asdf's :encoding support and asdf-encodings to XCVB.
+
+  * File pathname mapping:
+
+    + Always pass some file mapping, as either a file to load
+      or a form passed before the driver is invoked.
+
+    + The driver can now use virtual names.
+
+    + Support some file-mapping mechanism for blaze.
+
+  * Fix manifest format:
+
+    + store primitives in the build-command-for languages.
+
+    + use some generic mechanism to extract grain/vp/filenames
+      from build commands!
+
+    + pass not a pathname, but a command in the xcvb-driver language.
+
+    + optionally pass a list with a digest for each input grain.
+
+  * Magic Build:
+
+    + Have a fallback build that works on Lispworks Per.
+
+    + Have a "build" backend dispatcher that automatically chooses
+      an appropriate actual backend.
+
+    + Have slave-builder use this "build" backend
+
+  * Debugging information:
+    Use logical-pathnames or so, so that implementations should remember
+    appropriate debugging information.
+
+  * Better Testing:
+    ask Java guys how they do testing...
+    Build test infrastructure into XCVB ?
+
+  * Make Nemk better:
+    add support for executables to nemk backend.
+
+  * Better integration with ASDF:
+    fallback to loading an ASDF system when no XCVB build is available?
+
+  * System-granular parallel building extension to ASDF:
+    when you load a system
+    (which can be done within a .asd or using defsystem-depends-on),
+    actually contact a XCVB builder daemon that does it for you
+    in parallel with other dependencies.
+
+
+Top ITA TODO [V1]
+-----------------
+
+Here is the top of our TODO list at ITA (by Google):
+
+  * Finish applying XCVB to QRes:
+
+   + Complete the EVAL-WHEN cleanup of QRes. [Mostly Done]
+
+   + Run tests on the XCVB-compiled system.
+
+   + Re-branch based on a recent trunk.
+
+   + Use ``purge-xcvb`` to extract the non-XCVB changes needed by QRes,
+     and integrate those fixes into trunk.
+
+   + Actually merge with trunk.
+
+ * Complete ``with-xcvb-compilation-unit``. See `Compilation Units [V2]`_.
+
+ * Figure out the shortest path from here to providing incremental testing
+   for unit-tests and regression scripts. See `Tests [V2]`_.
+
+ * Fix our performance issue:
+
+   + Profile make-makefile and see where it's wasting its time.
+     Probably, we need to guard dependency recursion
+     with a dependency already having been issued, if not already.
+     Or we need better representations of sets, with fast-merge
+     and/or hash-consing, to optimize away
+     the otherwise quadratic (or worse) performance.
+
+   + Provide for fast compilation of QRes with XCVB and POIU.
+
+   + Try the standalone backend on QRes, for a fast(er) enforcing build.
+     Make it robust where it isn't, and more user-friendly, as needed.
+     The enforcing build of QRes is an order of magnitude slower than the ASDF build
+     (on a quad-core system). See below `Enhancing Build Speed [V2]`_.
+
+
+Enhancing Build Speed [V2]
+--------------------------
+
+  Non-enforcing build:
+
+      * Modify the QRes Makefile to take advantage
+        of the non-enforcing build feature.
+        See if we actually get a quicker build with POIU.
+
+      * Modify precheckin to do an incremental build in parallel,
+        so safety and maintainability are preserved.
+
+  Profiling the build:
+    Understand what is causing the performance problem,
+    which files are clogging the build,
+    and how much more clever build strategies (see below) could help.
+
+      * Add profiling information to xcvb/driver. [Done]
+
+      * Analyze statistics gathered so far with simple tools:
+        see which files stand out, etc.
+
+      * Implement the various alternate build strategies below,
+        with a stub that just adds the previously measured times
+        instead of actually loading and compiling stuff.
+
+  Building with forks:
+    Don't build with make, but by forking processes
+    that cache a partial state of the image
+    with various CFASLs being loaded so far.
+    This may tremendously reduce the overhead currently due to loading CFASLs.
+    The advantage is that it can easily be automated with relatively little code (1 week).
+    However, because of the combinatorial explosion in which subset of the CFASLs is required
+    for building which file, this may or may not help as much as we'd like;
+    but how much this would help we can evaluate by using the above analysis
+    without having to do the hard part of the code.
+
+  Refactoring:
+    Rearrange our code so that the really needed forms that everyone depends on
+    do not come attached to other heavy code that isn't depended upon but slows down the build.
+    This can be done manually or semi-automatically.
+    How much this may potentially help may be measured by decomposing the build in individual forms
+    (as msteele did for QPX), recomputing the dependency graph, and analyzing the profiling of a
+    build based on that (can be a serial build with both CFASL loading and FASL loading).
+    Each form is of course to be preceded by a proper in-package,
+    and so in-package forms have to be treated specially.
+
+  Moving tests out of the way:
+    As a straightforward form of refactoring, we should move all the test files
+    and as much as possible of their support
+    out of the main build into unit-test subsystems are lisp test scripts.
+    This would both take a lot of pressure out of the build system,
+    and be a good way to formalize a systematic way to relate source files and test files,
+    e.g. by having unit-tests in a test/ directory with files named similarly to the tested file,
+    as is done by other CL test systems.
+
+  Distinguishing FOO-time dependencies:
+    It is possible that the load-time dependencies of files are much smaller than their
+    compile-time dependencies, and that the load-time dependencies of CFASL may be even smaller.
+    There is one way to determine that automatically:
+    systematically try to remove each dependency from each file, one at a time, and see whether it
+    still compiles without error, if possible to the same output (now that SBCL has somewhat
+    deterministic output), whether its fasl still loads without error,
+    and whether its cfasl still loads without error.
+    This can also be fully automated in a way that requires zero-maintenance afterwards
+    and provides a "lint" tool for dependencies.
+
+  Brute force automatic dependency optimizer:
+    start from whatever is declared
+    (initially, what asdf-dependency-grovel provides, or even a linear ASDF::TRAVERSE-al;
+    in any case, a known-working order), and strip dependencies to a minimum.
+    For each dependency that isn't confirmed known-needed (starting from the last to the first),
+    try recompiling without said dependency. If there was an error, it is definitely needed.
+    If the FASL and CFASL are identical, it was definitely not needed. If there was no error but
+    different output, then mark as known unknown (can be made known known by testing, if a test
+    suite is available -- in a first pass, keep all the known unknown).
+    Importantly, distinguish ``:compile-depends-on``, ``:load-depends-on``
+    and even ``:cload-depends-on``
+    (for loading the CFASL) - with the "does it error out" test only for loading.
+    Once some known-needed dependencies of some file are determined, propagating this dependency to
+    other files that depend on the former will of course be instrumental in avoiding pointless
+    attempts at doing without said dependencies; which is why attempts should be queued in a
+    "brings most information" order.
+    After this is implemented, after A2X, X2A, A2A and X2X in variants that either
+    trust declared dependencies, flatten them to a serial list, or detects them with ADG.
+
+  Using SB-HEAPDUMP (?):
+    Instead of relying on the slow-loading FASL and CFASL,
+    use a more efficient method more akin to ``.o`` files.
+    Such a method currently exists for SBCL: SB-HEAPDUMP.
+    It doesn't currently exist for CCL but could conceivably be implemented
+    following the same model.
+    Modular chunks of dumped state could then be loaded more cheaply than FASLs
+    without implying the combinatorial explosion of having to save or fork
+    images for all possible partial load orders.
+    However, in addition to requiring technology we don't have on the CCL side,
+    it requires adherence to some package discipline we don't follow in QRes,
+    and for which we have no enforcement tool yet.
+
+
+Other Top TODO Items [V1]
+-------------------------
+
+Other top TODO items that are not on ITA's critical path include the following,
+in a random order. They would be ideal for a non-ITA hacker to tackle.
+
+I propose our next steps should be as follows:
+
+ * Make XCVB a universally applicable alternative or complement to ASDF.
+
+   + Fix the output format of the manifest, to distinguish between
+     "intended" command to be search for with :test 'equal,
+     and "actual" xcvb-driver command to execute.
+
+   + To ensure total compatibility, have a universal version of XCVB
+     that can run target any Lisp implementation,
+     including legacy systems like Genera,
+     crippled proprietary systems like Lispworks Personal,
+     and other limited systems like ABCL, XCL, GCL, MCL, Corman Lisp.
+     Building on the simplifying traversal used by the ASDF backend,
+     build a "reverse slave" backend whereby the slave XCVB would
+     tell its master process to do all the compilation work, and
+     a "load script" backend creating a simple load script.
+     XCVB could be able to always fall back to some working mode.
+
+   + For ABCL on Unix, use fork?
+       https://github.com/kohsuke/akuma/blob/master/src/main/java/com/sun/akuma/Daemon.java
+
+   + For an optimized XCVB managing its own processes, assume Linux
+     with SBCL or CCL, maybe if not too hard CLISP.
+
+ * Determine what proportion of the projects in Quicklisp can be
+   automatically converted to xcvb using xcvb a2x.
+
+ * Minimize/remove dependencies in the building of xcvb.
+
+    + each dependency is costly to have, *especially* if they fork.
+
+    + Note: they won't have to fork if we remove all obstacles to XCVB acceptance.
+
+ * Stabilize current xcvb source code:
+
+    + merge iolib with upstream - push patches to xcvb repo, if not upstream
+
+    + unit tests or more functional tests? hu.dwim.stefil
+
+    + Release
+
+ * Fix basic functionality:
+
+    + Make sure xcvb ssr works and is robust
+
+    + Make sure xcvb passes all tests
+
+ * Add more examples. keep them _simple_
+
+ * Cache: use rucksack to implement cache metadata,
+   digest (tthsum) for a content-addressed repository.
+
+ * Define what "extensibility" actually means & provide examples.
+
+    + Devise a way to refactor internals so that it becomes easier to extend xcvb.
+
+    + Maybe use sheeple?
+
+    + Registry location/definition & virtual path names
+
+    + Walking over virtual directories
+
+    + Dependency graph generation should be more seperable
+
+      - decorated with information from various stages
+
+      - type checking
+
+      - compilation to computation specification
+
+      - dot file output
+
+ * Idea for XCVB:
+   be more like Exscribe -
+   have a pass where rules fire and build a high-level model,
+   then in a second pass, compile this high-level model
+   straightforwardly into a low-level model of simple computations,
+   then interpret the low-level model.
+
+ * Have an option to load from the command-line all the (compile and load) dependencies
+   of some builds or modules X1..Xn with all the dependencies of X1..Xn loaded,
+   but none of X1..Xn.
+
+ * when cload'ing a build, only load the cload-deps of the build?
+
+ * Complete the farmer.
+
+ * Hack SBCL to remove path and date location from debug information, and/or
+   split debug information away from the FASL, so as to get both more determinism in the output
+   and more resilience of the output to trivial source code modifications.
+   See discussion on sbcl-devel mailing-list.
+
+ * Modify the Makefile backend to individualize the directory dependencies:
+   each target should only depend on the directory where the target itself lives,
+   as in::
+
+        XCVB_create_path/to :=
+	ifneq ($(wildcard path/to),path/to)
+          XCVB_create_path/to := create_path/to
+          create_path/to:
+        	mkdir -p path/to
+        endif
+	path/to/target: dependencies... $(XCVB_create_path/to)
+
+   or maybe simply::
+
+	path/to/target: dependencies...
+		mkdir -p path/to
+                ...
+
+   This will become more important once we have good fine-grained dependencies
+   through `Cryptographic Checksum [V1]`_,
+   so that we know exactly what to rebuild or not to rebuild
+   even when the global dependencies change (which is not the case currently).
+   Or we may switch to a make-less build at that point,
+   and then can just ``(ensure-directories-exist ...)``.
+
+ * When identifying a file dependency,
+   make the distinction between ``:source``, ``:object`` or ``:file``
+   orthogonal to that between ``:lisp``, ``:fasl``, ``:image`` or ``:data``.
+   This is not trivial because this requires:
+
+     + changing the dependency normalization algorithm,
+       probably normalizing to ``(:lisp (:source "subdir/foo.lsp" :in "/fullname/bar"))`` and
+       ``(:fasl (:object "subdir/foo.lx64fsl" :in "/fullname/bar"))``
+       (and autodetecting the pathname type for FASLs from the target implementation).
+
+     + updating the ``graph-for`` algorithm to deconstruct the new pattern.
+
+     + updating the ``dependency-namestring`` algorithm to deconstruct the new pattern.
+
+     + to make things error-proof, adding another layer of registration that ensures that
+       an actual pathname is only used for one kind of abstract dependency pathname.
+
+ * When a generated file is described in a ``build.xcvb``,
+   have the file itself depend on ``build.xcvb``.
+   This is one more reason to distinguish
+   dependency on ``(:data (:source "foo/build.xcvb"))``
+   from dependency on ``(:build "foo")``.
+
+ * Design a better declarative language to specify all these things
+   in a way that is not Lisp-specific???
+
+ * Also, in generated files, double-check that there isn't
+   an intermediate build that short-circuits the name resolution.
+   e.g. if ``foo/bar.lisp`` is generated from a build with fullname ``/quux``,
+   then there must *not* be a build with fullname ``/quux/foo`` that preempts that name;
+   if there is, issue an error early and refuse to build.
+
+ * Have a :execute-depends-on or :runtime-depends-on similar to :load-depends-on,
+   but with a load-after rather than load-before dependency.
+
+ * Implement a portable library for executing sub-programs
+   with arbitrary output redirection, that does at least what
+   ``asdf:run-shell-program`` does, but hopefully much more,
+   like python's ``popen2.popen3`` or ``subprocess.popen``,
+   or Perl 5's ``open`` or even like what SCSH provides.
+   This feature will eventually be used by
+   our standalone distributed build system.
+   Stelian Ionescu is possibly working on such a library as part of IOLib,
+   but would appreciate our giving him a good API.
+   See also http://common-lisp.net/project/external-program/
+
+ * Add support for arbitrary shell commands, including support for
+   filename expansion in shell commands, etc., in ``string-escape.lisp``.
+   May or may not benefit from the previous.
+
+ * In general, figure out what are the slow parts of XCVB (if any),
+   and optimize them or fix the badness in the underlying Lisp.
+
+ * Make XCVB independent from ``cl-launch``
+   by implementing the missing functionality.
+   See `Producing Executables [V3]`_.
+   Save a few seconds and hundreds of megabytes of double-image dumping
+   by not having to dump once with XCVB, another time with cl-launch.
+
+ * Issue a binary release with a standalone clisp binary?
+
+ * Implement `Exploded File Dependencies [V1]`_
+   then `Centralized Dependency Declaration [V1]`_.
+
+ * It is best if ``xcvb.mk`` should be systematically recomputed before any build.
+   Ideally, it should also record enough information to invalidate things that are
+   going to be built in a different way from before, even though their timestamps
+   may now look correct. Once again, see `Exploded File Dependencies [V1]`_
+
+ * Change the semantics of dependencies to allow to "upgrade" some CFASL's to FASL's?
+   Maybe not, because this is tricky as we want to preserve the order of loads, and
+   trickier still if for whatever reason the dependencies of the FASL are not an
+   upgrade from the dependencies of the CFASL. (That condition may be tested and
+   an error issued if not met.)
+
+
+Roadmap [V1]
+============
+
+Improvements required for XCVB version 1 are marked [V1].
+These correspond to a system suitable to automatically replace ASDF,
+but otherwise without any extra feature besides
+the enhanced robustness, maintainability and integration with ``make``.
+
+Improvements required for XCVB version 2 are marked [V2].
+These correspond to the "V" in XCVB: Verification.
+Automated incremental testing, dependency groveling,
+checksum verification, compartmentalized file trees, etc.
+
+Improvements required for XCVB version 3 are marked [V3].
+The goal is for XCVB to be able to build Lisp projects
+all by itself, taking advantage of parallelism and distribution,
+minimizing slow LOADs by forking (or dumping images?), etc.
+
+Improvements required for XCVB version 4 are marked [V4].
+The goal is for XCVB to become its own better building system,
+able to build arbitrary Lisp or non-Lisp projects in a robust way,
+with a distributed farm of machines able to identify objects
+by a `Cryptographic Checksum [V1]`_ of
+the precise source and compilation options used.
+
+Improvements required for XCVB version 5 are marked [V5].
+The goal is for XCVB to grow fancy features and heuristics
+that demonstrate the advantages of a higher-level design.
+Things go here that have really low priority.
+
+As things get done, they should be moved
+from the ``TODO`` document to the appropriate documentation
+(at this moment, either ``README`` or ``INTERNALS``).
+
+
+Usability Issues [V1]
+=====================
+
+This section describes usability bugs,
+i.e. things that do not modify the deep semantic model of XCVB,
+but are necessary to make it usable.
+
+
+Migration from ASDF [V2]
+------------------------
+
+We already have what we need for [V1]:
+we can already do simple cases with a proper command-line interface.
+See the ``README.rest``.
+
+Cases we do not handle correctly involve:
+
+  * Migrating several ASDF systems to XCVB.
+    The converter could recursively migrate dependencies:
+    starting from specified systems,
+    transitively migrate asdf system dependencies,
+    stopping at given ones,
+    and skipping those already migrated unless explicitly requested.
+
+  * Systems that rely on ASDF extensions such as
+    compile-time reading of data files, dynamic creation of Lisp files
+    or conditional compilation may have to be manually migrated and/or
+    their automatically migrated ``build.xcvb`` may have to be manually edited.
+
+  * We don't currently correctly merge changes into
+    previously manually-edited ``build.xcvb`` files.
+
+
+Non-enforcing builds [V2]
+-------------------------
+
+Currently, we use ASDF (and POIU) for non-enforcing builds.
+In the future, we may want something to implement it all inside XCVB,
+so ASDF can die.
+
+  1- implement a deterministic serializing build that imposes a total order
+    on dependencies.
+
+  2- implement a builder that takes a (serialized or still parallel) build
+    and compiles in the same image, either ASDF-style or POIU-style
+    (ASDF-style being almost a degenerate case of POIU-style with max-fork=1).
+
+
+In-image loading [V2]
+---------------------
+
+Note that in-image loading is also necessary for extensions to XCVB itself,
+whereby extensions are to be loaded in the current XCVB image.
+So In-image loading is a prerequisite for the X of XCVB.
+
+Build without make? time for our own dynamic backend!
+
+
+Centralized Dependency Declaration [V1]
+---------------------------------------
+
+Some users have requested the ability to declare dependencies of a Lisp module
+from the ``build.xcvb`` file instead of inside the Lisp file itself.
+
+A syntax extension allowing such feature (making XCVB more similar to ASDF)
+would be welcome.
+
+To be practical and not lead to everything depending on build.xcvb and having
+to be rebuilt every single time any dependency changes, this feature should be
+accompanied by the below feature on exploded file dependencies.
+
+
+Exploded File Dependencies [V1]
+-------------------------------
+
+Another useful feature it to store the computation for each object file
+in its own shell script that is only modified when the contents actually change.
+The shell script is the first dependency of the target, and the ``Makefile`` rule
+could look like that::
+
+	obj/foo/bar.fasl: obj/foo/bar.fasl.sh obj/foo/pkg.cfasl obj/foo/mac.cfasl
+		sh $<
+
+Additionally, this script can contain dependency information on all the things that matter
+yet that are not encoded in the timestamps used by make:
+e.g. timestamp and/or md5sum of the Lisp implementation that was previously used,
+values of critical shell environment variables, etc.
+This could notably include information from ``SBCL_HOME`` or ``CCL_DIRECTORY``.
+
+The script can also contain a debugging option, so that the user may easily debug
+something that went wrong -- and the script would output an offer to call the script
+with the debug flag when it detects that things went wrong.
+
+Note however that for the purposes of bootstrapping a project
+(which should only matters for XCVB itself, really),
+we can't include any such dependency on things
+that are outside the distributed sources.
+Therefore it should be possible to disable this feature
+at least for the dependencies of such project.
+
+
+Environment Variables [V2]
+--------------------------
+
+Have an magic dependency type::
+
+   (:build-time-environment-variable "FOO")
+
+That generates a variable like that::
+
+   (defparameter build-time-environment-variable::*FOO* "bar")
+
+Except of course that the package must be created, etc.
+
+
+Computed Dependencies [V2]
+--------------------------
+
+As a generalization of environment variables,
+XCVB should allow all kinds of computed dependencies.
+
+For instance, modules can be made to declare dependencies
+on things other than Lisp files as such.
+These generalized dependencies could include
+Lisp code generated as specified by a form
+(e.g. "the function needed by the LIST-OF type",
+or "support for this encoding").
+Such generated code would then only have to be compiled and loaded once.
+Other obvious generalized dependencies could include
+compilation or otherwise processing of
+C files, python files, data files, etc.,
+with arbitrary commands and flags, yielding a variety of object files.
+XCVB could thus be eventually turned into a generally useful build system.
+
+Lack of Manual [V2]
+-------------------
+
+Document all there is to know to use XCVB in README.rest.
+If README grows too big, create a separate MANUAL.rest.
+
+There should be both a tutorial and an API specification.
+
+Document or automate away things such as:
+
+  * What should be in the ``Makefile`` of a project that uses xcvb:
+
+     + what Make variables to configure and how to configure them
+       (much fewer now that ASDF is not needed anymore).
+
+     + what Lisp variables to setup and how to set them up,
+       especially when still using ASDF.
+
+     + rules to make ``xcvb.mk`` itself (always make it). How to use it.
+
+     + how to use CL-Launch to build an executable from a xcvb-produced image.
+
+  * Provide a formal specification of the module syntax and the dependency syntax, with examples.
+
+
+Producing Executables [V3]
+--------------------------
+
+Currently, ``cl-launch`` accepts an explicit initial image as input,
+and this can be used in a ``Makefile``
+to create an executable from an image produced by XCVB.
+This is done but needs to be documented in XCVB's README. [V1]
+
+In a second time [V3], XCVB should be extended to directly support
+all the relevant features from cl-launch:
+init forms, resume function, user-customizable shell wrapping
+and/or standalone images.
+
+Additionally, when creating a standalone executable,
+some initializers and finalizers may have to be run as described in
+`Initialization and Finalization [V2]`_.
+
+See in example 4 how Cabal does it:
+	http://www.haskell.org/ghc/docs/latest/html/Cabal/authors.html
+
+
+Features [V2]
+=============
+
+This section describes features that have to be added to XCVB.
+They modify the underlying build model.
+
+
+Improve Makefile backend [V2]
+-----------------------------
+
+Create and document the following small features:
+
+  * use Makefile variables as path prefix for most everything?
+
+  * use a map file that maps virtual names to path locations?
+    This will be required in a distributed build, anyway!
+    Use logical pathnames for that! Logical host XSRC: ?
+    But then, we might need to include parts of portablish-pathnames
+    with the driver...
+
+
+Abstract Away Paths [V2]
+------------------------
+
+Have a datastructure for "string with substituted variables" (or shell or Make function calls?).
+
+Be able to either dump a corresponding string (for writing Makefile),
+or to expand into an actual string (for running the build).
+
+Map actual paths to and from variablized strings, i.e. have
+``${FOO}/bar/${GAH}`` in your path; it will search for files there,
+and output ``${FOO}/bar/${GAH}/xcvb/build.xcvb``
+in the ``Makefile`` (instead of the full expansion).
+
+Use logical-pathnames so that implementations should remember
+appropriate debugging information???
+That's optimization way down the line [V3].
+
+
+
+Initialization and Finalization [V2]
+------------------------------------
+
+Some code has to be run before and after file is compiled.
+
+Before to compile a file, one may want to
+
+  * change the readtable (or the reader)
+  * set up some infrastructure (db connection)
+  * initialize some meta-data tables
+
+At the beginning of a file's compilation, one may want to
+
+  * Insert compile-time or load-time form to be evaluated
+    to dynamically initialize the module.
+
+At the end of a file's compilation, one may want to
+
+  * Insert compile-time or load-time form to be evaluated
+    to dynamically finalize the module.
+
+After the file is compiled, one may want to
+
+  * save cross-reference data
+  * register dynamic dependencies (i.e. "requires once-per-project instantiation of this form")
+  * more generally update meta-data
+
+After a whole system is compiled,
+but before a bundle (library or executable) is created,
+it might be useful to run some code to finalize internal datastructures,
+grab a version number from git, etc.
+
+On ECL and other linking targets (if any; ABCL maybe),
+this might mean compiling a temporary file with appropriate commands in it,
+the result of which is to be linked in;
+additionally, the code may have to be loaded as well as linked
+so as to evaluate the functions and macros used in creating the final bit.
+
+
+
+Tests [V2]
+----------
+
+XCVB should have an interface to specially run (or skip) tests.
+
+In the default (incremental) mode, test modules would be run
+if and only if their declared dependencies have changed.
+The test modules would be compiled into a FASL then loaded
+and create a report of whether the run was successful.
+Reports can further be collected for statistics, etc.
+
+Tests don't just output a summary,
+they also have a status that affects the build.
+For instance a test that runs to completion
+and successfully creates a valid report
+may detect issues that flag the build as a whole as invalid.
+
+What state needs to be maintained?
+
+   + Test reports are file grains that depend on the properly compiled
+     fasls or images that are being tested.
+
+   + A test report is a file the first form of which is
+     a simple SEXP to be read,
+     following some standardized structure to specify overall success,
+     status of individual tests (including error message, maybe
+     information as to last success, etc.).
+
+   + For the sake of interoperability, we may specify a translation
+     from said S-Expression test result format to XML
+     that complies with what JUnit expects.
+     (Suggestion by Robert Goldman <rpgoldman@sift.info>)
+
+   + In collaboration with folks from BBN, rpg's colleague John Maraist
+     has built this capability into his NST test framework.
+     This means that a large system with Java components can all be tested together.
+
+   + From the test reports, a success witness (empty file) may be created
+     on success.
+
+   + The success witness fails to be created when the test wasn't a success,
+     and the process returns with an error code for make to catch.
+
+   + Preparing the makefile erases the success witnesses.
+
+   + To evaluate the progress of tests, regressions, etc., said state can be
+     registered in some side file, based on `Cryptographic Checksum [V1]`_
+     of source, fasl, etc.
+
+   + Test state can be shared between machines in a test server instead
+     of local files.
+
+XCVB should be able to thus synthesize and associate diagnostics to the overall build.
+
+
+Compilation Units [V2]
+----------------------
+
+As an example of post-compilation testing, and/or as a special-purpose item,
+provide the functionality of ``with-compilation-unit`` currently lost in XCVB:
+warnings about undefined functions and
+errors about macros previously thought to be functions
+should be issued when an image is dumped.
+
+ Warnings about undefined functions are currently quenched during file compilation.
+   HOWEVER, we should record them on the side as we build, and reconcile them afterwards,
+   before or after image creation. In other words, we must implement
+   ``with-xcvb-compilation-unit`` in a way that actually defers warnings,
+   rather than plainly drops them.
+
+   + Good compilers generate conditions when a function is forward referenced;
+     these conditions need to be handled in implementation-dependent way, and
+     the symbol-name and package-name of the referenced symbols need to be
+     dumped into a file ``.fref`` alongside the ``.fasl`` and ``.cfasl``
+     as each file is compiled.
+
+   + Previous solutions in single-image build systems such as ASDF involved
+     ``with-compilation-unit`` and simple wrappers around it that defer the
+     handling of some conditions until the end of the compilation unit.
+     However, because we are specifically invalidating this assumption that
+     everything is compiled in the same image, we need to instead persist
+     forward reference information in files, and complete the final check
+     for undefined functions after image-dumping. This check would be the
+     first XCVB-managed unit-test; implementing it would be a good way to start
+     moving existing unit tests into incremental management by XCVB
+     -- the ultimate goal of migrating QRes to XCVB.
+
+   + Basically, one would create a test target dependent on the final image
+     that runs a function that collects all these forward references and makes sure
+     that all the referenced functions are indeed defined and defined as functions
+     (rather than as macro).
+
+   + The check would issue precise error messages describing which file referenced which
+     undefined function, or which file used a macro without depending on the file that
+     defined the macro. NB: *This is important for the dependency optimizer* since
+     it can help detect dependencies that are required indeed.
+
+
+Dependency grovelling [V2]
+--------------------------
+
+We may want to document how to extend asdf-dependency-grovel
+when migrating systems from ASDF.
+
+Actually, we might be interested in tweaking asdf-dependency-grovel
+into some kind of xcvb-dependency-grovel
+and possibly move all the groveling on the XCVB side,
+taking a simple ASDF assumedly working serial compile-and-load plan
+as the initial dependency map.
+
+An XCVB dependency checker can detect unnecessary dependencies,
+optionally remove them automatically.
+With the help of some registry, it may even suggest
+which missing dependencies should be added
+-- and optionally automatically recompile after adding them.
+
+For bonus points [V3], the groveler should know how to distinguish
+between ``:compile-toplevel`` and ``:load-toplevel`` side-effects to
+the evaluation environment.
+
+
+Bootstrap [V3]
+--------------
+
+We may want to fully migrate all the existing Lisp world
+from ASDF to XCVB.
+
+The hardest part may well be extending and migrating asdf-dependency-grovel
+(see above), but it may well be worth it.
+
+We will want to have some non-invasive incremental strategy
+to migrating all the existing ASDF projects,
+and to integrate with some existing distribution mechanism
+(clbuild).
+
+
+Same source, multiple compilers [V4]
+------------------------------------
+
+We will want to combine as part of the same build multiple compilations
+of the same source files using different compilers and/or compiler options.
+
+For instance, we may compile some source optimized for speed,
+and the same source with extra safety features and code coverage instrumentation.
+The code coverage version would be used in tests that identify
+which parts of the test suite exert which part of the code,
+and the results can drive future incremental testing of the test suite.
+Meanwhile, the speedy version also runs the test suite,
+just to make sure the optimizations don't break anything,
+and it also is made to pass a performance tests
+that aren't relevant to the slow version.
+
+Another use for multiple compiler options is
+when compiling the same source for use in different contexts,
+such as one that is optimized for speed with default CL promises
+(i.e. no guaranteed proper tail calls),
+whereas the other one guarantees proper tail calls,
+maybe provides call/cc (and supports interoperability with programs that do use it),
+maybe even provides serialization of continuations, etc.
+The more options you support,
+the higher the burden on the compiler to produce good code,
+but the wider the settings in which your code might be useful.
+A very same executable could thus contain multiple versions of a same function
+compiled with different options, to be used in different contexts.
+
+
+Correctly handling C libraries [V4]
+-----------------------------------
+
+While objects may have to be compiled one way to be dynamically loaded into Lisp,
+they may have to be compiled another way to be statically linked into the Lisp image.
+XCVB will eventually have to know both ways, and do the right thing.
+
+For dynamic objects, it should be able to have them installed in a place that
+the Lisp image can find them when it needs them later.
+
+For static objects, it should be able to recompile the Lisp runtime to include them.
+This will require some synchronization with CFFI.
+
+
+Bug hunting [V5]
+----------------
+
+XCVB should be able to track down all the source files
+involved in a test and point the blame to all those changesets
+in the version control system that affected said files,
+barring other changesets.
+Actually, this information can be used to accelerate binary search
+in a bissect-based bug hunt.
+In such a hunt, some components would be fetched from version control
+and others be otherwise cast in stone or computed --
+which is particularly useful when the test was written
+after the bug was found rather than the bug being a regression,
+or when several bugs were introduced in a series of changesets,
+some of which having been found and fixed bug not others.
+
+
+Ideas from jknight [V2]
+-----------------------
+
+Ideas from discussion w/ jknight:
+
+ * extending XCVB: allow people to export a procedural interface as in "rebuild me"
+   rather than only a declarative interface
+   "conform to my crazy internal graph representation". [V2]
+   (Note that if you're using the Makefile backend, you can just add rules to a Makefile
+   that otherwise ``include``'s the XCVB output.)
+
+ * Must allow path-independent inclusion of foreign libraries (as -ljpeg in gcc)
+   in portable xcvb.mk output [V2].
+
+ * Allow output to go in different directory from the source, with sensible defaults.
+   For instance, with autotools, the output by default goes
+   into the directory from which it is run. [V2]
+
+ * option to only create relative pathname. [V2]
+
+
+Dynamic Dependencies [V2]
+-------------------------
+
+Allow source files to be dynamically computed,
+including the computation of its dependencies.
+
+For the Make backend, this means that ``xcvb`` and ``make``
+shall be called recursively called by the rule for the object target
+after the Lisp file has been created.
+
+For the independent backend, this means that the dependency graph
+can grow new nodes and arcs as some files are discovered.
+
+
+Cryptographic Checksum [V1]
+---------------------------
+
+An important precondition to deterministic compilation is that
+input files should not be modified in the middle of a compilation run.
+XCVB should have a safe mode (enabled by default)
+to check the cryptographic checksums at the beginning and end
+of each transaction, and abort the transaction removing dubious object files
+if anything has changed between the beginning and end of a command.
+
+Here, transaction means anything that commits any object file to cache,
+any metadata to some registry, etc.
+
+For instance, if you're compiling file foo.lisp that depends on bar.lisp
+to create foo.fasl and foo.cfasl, with some additional code coverage instrumentation,
+and dependency detection that gets registered in a side cache,
+then record the checksums of foo.lisp and bar.lisp before you compile,
+double check that they didn't change afterwards, if they did,
+then remove foo.fasl and omit to update the cache.
+The check before running a command may or may not be omitted
+if the file has already been checksummed during the current run,
+the previous checksum being used;
+or the checksum may be eagerly re-checked at every command.
+In either case, it should always be checked after the command.
+
+If checking checksum at every command is too time consuming, then there is the option
+of only doing it at the beginning and end of the overall compilation,
+but then any update of global caches should have the same granularity.
+For a distributed build, definitely check before and after every command,
+and/or use a content-addressed cache to eschew the need for further checksumming.
+
+
+Template Instantiations [V5]
+----------------------------
+
+One interesting type of dependencies is template instantiation.
+Some libraries may provide a family of algorithms
+that are parametrized by various types or values,
+the semantics of the algorithm being fully encapsulated
+in the data of the library and the instantiation parameters.
+The template for these algorithms must be instantiated
+for a given set of parameters before it may be used,
+yet this instantiation is costly enough in time and/or memory
+that you want it to be done only once over the whole project.
+
+We'll want XCVB to be able to track down such template instantiations.
+One way of course is to have the user do it manually,
+with one of the declared dependencies of a module being
+something that instantiates the library.
+This works if such templated libraries are few and far between.
+Another way that scales to massive use of such libraries
+is that the compilation process would automatically detect
+the need for such instantiations,
+and include them as additional project dependencies
+as the need for such appears.
+
+
+Configuration Management [V2]
+-----------------------------
+
+Generalize features into a set of configuration variables,
+used by the conditional dependencies language, and more.
+Initialize booleans based on *features*.
+
+These variables should be queryable from the build.xcvb DSL;
+they shall probably be also available in the target image,
+but then again used in a way that flags dependencies
+on the values of the variables that are used.
+
+
+Better ASDF backend [V2]
+------------------------
+
+The conversion to ASDF is lossy.
+We handle the simple base cases perfectly,
+but beyond that, we currently output something
+that will hopefully work well enough to load a system,
+but that will not encode such information as
+conditional compilation, generated files, etc.
+
+This should be good enough for deployment purposes, or
+as the basis on which a hacker may manually flesh out a full-fledged ASDF system.
+
+To correctly handle more complex cases,
+
+ * have a system "xcvb-extensions.asd" that extends ASDF to have the missing
+   features provided by XCVB.
+
+ * push these extensions for inclusion in upstream ASDF, and/or
+
+ * just punt and have ASDF delegate to xcvb-driver.
+
+Note that the conversion can be tested with::
+
+	xcvb x2a -b /xcvb -o /tmp/blah.asd
+
+
+Better Debugging [V3]
+---------------------
+
+In some future, have a more robust way to debug than using ``${XCVB_DEBUGGING}``.
+When XCVB controls the build, it should provide a way to debug, too.
+
+
+Support common ASDF Extensions [V1]
+-----------------------------------
+
+Support ``cffi-grovel``.
+
+Support ``:static-file``.
+
+
+Internals [V4]
+==============
+
+Type-Checking [V4]
+------------------
+
+XCVB uses some poor-man's mechanism for writing in a decentralized way
+code that can handle "little languages" that are thus easy to extend:
+``define-simple-dispatcher``.
+
+At some point we might probably want to systematize
+the use of these "little languages",
+aka Abstract Data Types, and provide a way to type-check our code,
+automatically verify that we're handling all the cases as we extend them,
+give meaningful feedback for errors in user-provided input, etc.
+
+
+Error handling [V4]
+-------------------
+
+We should refactor all error throwing with a call to simply-error,
+using a condition defined specifically for that error.
+
+We should also provide a nicer way of presenting errors to the end-user.
+Maybe there should also be some library for that.
+
+
+Declarative model [V4]
+----------------------
+
+Use a more declarative model to describe the various types of objects
+and the types of relations between them within a given first-class context,
+so that there can be pure functions from context to context,
+mapping sets of facts (atoms and relationships) to sets of facts.
+
+Make good use of linear relationships for in-place modification,
+automatically create indices, etc.
+
+
+Propagation Networks [V4]
+-------------------------
+
+Use them for initialization: declare a variable (and subvariables)
+as requiring initialization when some events occur
+(i.e. process started, command-line passed, module form parsed,
+computation started, etc.),
+finalization/deinitialization when other events occur
+(i.e. ready to dump image, end of command, etc.).
+
+Use them for the farmer: create a network for the computations,
+propagate latency estimates, propagate actual computations,
+repropagate latency estimates as feedback comes back in.
+
+
+Advanced Build Issues [V3]
+==========================
+
+Read the classics [V3]
+----------------------
+
+As we try to get XCVB to rival with existing build systems,
+we may want to cover our bases and see what previous systems
+did right and what they did wrong.
+
+Rainer Joswig on #lisp suggested:
+'BUILD: A tool for maintaining consistency in modular systems'
+by Richard Elliot Robbins, 1985.
+ftp://publications.ai.mit.edu/ai-publications/pdf/AITR-874.pdf
+The build system described takes an interesting declarative approach:
+the system builds an abstract model of the modules in terms
+of grains having various kinds of directed reference relationships as
+in ``(:macros-calls foo bar)``.
+The task graph to fulfill a build request is automatically deduced
+from the reference model and various request-handlers
+(pre and post reference handling) and reference-handlers
+that propagate the information along the nodes.
+
+See also:
+
+        * GNU Make http://www.gnu.org/software/make/
+	* OMake http://omake.metaprl.org/index.html
+	* CMake http://www.cmake.org/
+        * Haskell Cabal http://www.haskell.org/cabal/
+        * Boost Jam http://www.boost.org/doc/tools/jam/index.html
+	* SCons http://www.scons.org/
+        * SEBS http://code.google.com/p/sebs/
+        * VESTA http://www.vestasys.org/
+        * Rebar http://dizzyd.com/blog/post/194
+
+distclc [V3]
+------------
+
+The first step towards distributed builds is to plug into the usual ``Makefile``, etc.,
+mechanisms, only adding an automated manager for distributed compilation through
+a farm of available hosts, just like ``distcc`` does for C compilation.
+
+``distclc`` should be written on top of Erlang-in-Lisp.
+
+
+clcache [V3]
+------------
+
+The second step towards distributed builds is to have an automated
+(distributed) cache of compiled objects, just like ``ccache`` does for C compilation.
+
+Interestingly, to do it properly, we index grains by a buildhash
+that summarizes all the input used to build the grain, including
+type of the grain, command used, contents of the source files,
+binaries used to run the compilation, etc.
+
+To achieve that in a semi-automatic way, we may architect the operations
+used to build grains in an I/O-summarizing monad that identifies then
+summarizes inputs and outputs of the operations --
+which monad can itself be decomposed in terms of input-identifying
+and output-identifying monads, etc.
+In a Haskell world, the monad would annotate the type of each
+of the many intermediate functions involved.
+
+
+XCVB as its own backend [V3]
+----------------------------
+
+Eventually, we want to be able to take over the Lisp build from Make,
+so as to achieve things that Make can't do.
+
+This can be done after we have ``distclc`` and ``clcache``,
+by evolving the result to the point that we don't need Make.
+
+
+Push for better control of file source location [V3]
+----------------------------------------------------
+
+When doing a distributed build,
+of course the actual pathname of the file being compiled or loaded
+will be different from the virtual name of the module being compiled or loaded.
+
+For instance, when asking ``distclc`` to compile
+module ``foo/bar/baz.lisp`` under directory ``/home/fare/src/``
+which as a dependency loads ``quux.fasl``,
+``distclc`` may actually create a temporary file
+``12345.lisp`` where ``12345`` is the hash of ``baz.lisp``
+under directory ``/tmp/distclc/``
+and reuse ``67890.fasl`` from ``/var/cache/clcache/6/7/``
+where ``67890`` is the hash of ``quux.fasl``.
+
+Yet when associating source location information to functions being compiled,
+XCVB needs be able to tell the underlying Lisp compiler that it should be
+using the virtual location foo/bar/baz.lisp (and foo/bar/quux.lisp),
+and additionally identify the hash of the file's contents
+and possibly its revision in the version control system.
+
+Of course, logical pathnames as defined by the CLHS are about unusable:
+case-dropping, no underscore, not-so-portable, etc.
+So offer to standardize something different for those virtual paths,
+and the way that SLIME and/or the builtin debugger with interpret those paths.
+Or actually use CLHS logical pathnames, and enforce their restrictions in XCVB names.
+Or see that CL logical pathnames work in practice, and issue a semi-official
+replacement for the CLHS.
+
+jsnell suggests to look at what SLIME does -- presumably (for SBCL)
+ask for extra information to be stored in the debug info with
+a non-standard with-compilation-unit keyword. OR one might be able to do
+sneaky stuff with logical-pathname-translations: ask to ``COMPILE-FILE``
+some logical-pathname for which an ad-hoc translation was created.
+
+
+Push for better control of in-file source location [V4]
+-------------------------------------------------------
+
+A related problem is in-file source location.
+
+When using a syntactic front-end that generates Common Lisp code
+from a different dialect or language
+(say, a variant that supports hygienic macros,
+or a Haskell to Lisp compiler),
+the precise in-file location of a source statement that CL compiles
+is not at all the same as the one that matters for the debugger
+to locate the actual source code.
+
+For instance, one could provide hygienic macros through a form
+``WITH-HYGIENIC-MACROS`` that does the necessary whole-program
+identifier tracking. This would make a typical CL source location
+tracker that only remembers the enclosing toplevel form wholly useless.
+
+The PLT Scheme system has a good source tracking facility
+that we may want to reuse of get inspiration from.
+Even the C preprocessor has the crude line identification:
+``# 123 "baz.h" 2 3 4``
+
+For SBCL, ask jsnell, tcr, nyef: the preprocessed file could expand to
+things like ``#.(preprocessed-form 345)`` where the ``(preprocessed-form ...)``
+function would return expanded forms and subforms that each (as applicable)
+already have source locations associated through something like::
+
+  (setf (gethash EXPANDEDFORM *some-source-location-hash*)
+        ORIGINAL-SOURCE-LOCATION)
+
+Semi-relatedly, we might want to decouple the source location information
+from the dumped object file, so that it can be loaded independently,
+possibly only in the debugger process rather than the target Lisp process.
+This makes a lot of sense if you're targetting an embedded platform,
+but also if you want to compare object files for equality and easily
+determine that indeed whatever changed in the build was semantically
+not significant (e.g. changes in whitespace/comment, in local variable
+names, and other trivially optimized-away changes).
+
+
+Push for more determinism in Lisp compilers [V5]
+------------------------------------------------
+
+We should encourage implementers of Lisp compilers
+to offer as an option (or even the default)
+to have as much determinism as possible in the compile of files.
+
+If to avoid collisions these compilers require that
+a pseudo-random number generator be initialized to different values
+for each file being compiled,
+then offer to initialize it based on the buildhash
+for the current compilation
+(with an override to a previous buildhash offered for debugging purposes).
+
+Try to standardize an interface to deterministically initialize the PRNGs
+and deterministically add noise to them, based on arbitrary initial seed data.
+We may start by manually binding seeds for gensym, gentemp, random, etc.,
+based on a crypto checksum of the fullname, around compilation of files.
+
+Maybe also standardize some strong `Cryptographic Checksum [V1]`_ algorithms
+and algorithm generators for arbitrary Lisp data,
+as are used by clcache.
+
+
+
+
+Push for First-class PCLSRing in Lisp compilers [V5]
+----------------------------------------------------
+
+To support single-stepping and safe concurrency
+in arbitrary extensions to the base language,
+it may be crucial to push a meta-level protocol for first-class PCLSRing
+whereby writers of language extensions and applications
+can specify the atomicity of their operations
+in a way that will be compiled efficiently,
+yet will guarantee that synchronization happens correctly
+when interrupting a program.
+
+
+Support dependencies for modules written in other languages [V4]
+----------------------------------------------------------------
+
+If XCVB is to become a general build tool,
+it needs to be made aware of dependencies for projects written in other languages.
+This includes using output of ``gcc -MM``, and other dependency generators.
+
+
+Mixing and Matching compilers [V5]
+----------------------------------
+
+A given project may contain files written in many languages,
+including but not limited to Common Lisp and C.
+Additionally, there may be various different variants of FFI
+to be used to interface modules written in different languages,
+depending on the specific compiler and compiler options used.
+
+For instance, interfacing code compiled by a given Scheme compiler
+with given options will differ from interfacing with the same
+code compiled by a different compiler, or even with code compiled
+by same compiler with different options.
+Yet, for whatever reasons, a given project might want to mix and match
+modules written in different languages.
+
+XCVB might grow some generic protocol to describe the steps required to
+interface something to something else.
+
+
+Constraint-based goal language [V6]
+-----------------------------------
+
+The build language of XCVB could in the most general case be
+some constraint declaration language, and XCVB would use a constraint solver,
+whereby you want to build a running system that has these final properties,
+starting from an existing running system that has these initial properties.
+XCVB could detect conformance of the specification with various known subsets
+of the language that keep the constraint satisfaction easy.
+
+
+A Real Module System [V3]
+=========================
+
+Up to version 4, XCVB can be seen as the bottom half of a real module system.
+But hopefully we can build a real full-fledged module system on top of XCVB,
+including syntax extensions and namespace management.
+
+
+Syntax Extensions [V3]
+----------------------
+
+Because modules are compiled in a separate way that shields them
+from unwanted compile-time side-effects necessary to build other modules,
+it immediately becomes possible for a module to have a compile-time dependency
+on a module that modifies the syntax of Common-Lisp by introducing arbitrary
+macros and reader-macros.
+
+We may generalize this by having XCVB manage an explicit override of the reader
+used to compile a given module.
+
+To preserve debuggability, this requires extension to existing compilers
+so they provide better control of in-file source location [V4].
+
+
+Automatic Package management [V5]
+---------------------------------
+
+Defpackage statements are a notorious pain to maintain in Lisp.
+At the same time they need to be all setup in advance of the rest of the compilation.
+
+A layer on top of XCVB could help manage packages dynamically,
+by allowing to associate a package with a module, itself made of many submodules.
+An initial simple ``defpackage`` form would be supplied by the user;
+what the module actually ``export``'s (or even ``import``'s) could be dynamically inferred
+from the compilation of the module (and all its submodules),
+with the final ``defpackage`` being created automatically from this inferrence.
+
+Recompilation might be required if the ``defpackage``'s imports have changed
+since it was last inferred, or it could just be an error.
+
+All users of the module would only see the final stable ``defpackage``,
+and have to be recompiled when said ``defpackage`` changes.
+
+Finally, this could serve as the basis for dumping
+package-based partial heap dumps with ``SB-HEAPDUMP``
+instead of using FASLs.
+
+
+Better Namespace Management [V5]
+--------------------------------
+
+Packages are not the be-all end-all of namespace management.
+Actually, they are a very midesigned antiquated hack from the 1970's
+that has long overlived its expiry date.
+Many much better namespace management systems have been created
+since the 1980's for many Lisp dialects and other languages.
+Even for Common-Lisp, cheap yet better replacement exists, Lexicons.
+
+We may want to layer on top of XCVB
+an syntactic extension to Common Lisp that properly handles namespaces.
+(See BSDF?)
+
+For instance, we might reuse concepts and even code from the PLT Scheme system,
+both regarding their module system and their unit system.
+A key to doing it properly is to have already solved the syntax extension issues
+and the macro hygiene problem (see above).
+But we can decouple the source-level debugging issue as an addendum to the
+the being able to do it at all issue.
+
+Don't miss this important bibliography:
+  http://readscheme.org/modules/
+
+Taylor Campbell on the irc.openprojects.net ``#scheme`` channel gave the following piece of advice.
+Personally I think that it would be easiest to use Scheme48's module system for that,
+but what I'd care most about is
+(1) that you separate phases sensibly, and
+(2) that you provide working hygiene.
+See Flatt, 'Composable and Compilable Macros', 2002.
+http://www.cs.utah.edu/plt/publications/macromod.pdf
+(The R6RS's library system emphatically got phase separation wrong.
+Don't repeat their mistake.)
+
+
+Hooks into the Module Naming Resolution [V5]
+--------------------------------------------
+
+So as to support compilation of a project that spans over multiple builds,
+a module naming system was implemented.
+
+When a module is not found, a hook function may be called,
+that allows for arbitrary computed modules, most notably including
+modules automatically downloaded and installed on demand from the internet.
+
+
+Packaging and Distribution [V5]
+-------------------------------
+
+At some point in a relatively distant future,
+we may want to extend XCVB to handle
+the automatic packaging and distribution of Lisp-based projects.
+Or hopefully, some existing packaging and distribution system
+will already have adopted XCVB as its build tool.
+
+See ASDF-INSTALL, clbuild, libcl, desire, etc.
+
+See Haskell Hackage, Caml Hump, (Erlang) Rebar,
+PLaneT, Chicken eggs,
+Ruby gems, Python eggs, Java beans, etc.
+
+When extending the system to include the management of packages for distribution,
+be sure that you play well with whichever Operating System's packaging software:
+http://www.b-list.org/weblog/2008/dec/14/packaging/
+
+See also on other CL forums if anything serious is brewing.
+
+
+More bibliography [V5]
+----------------------
+
+http://ieeexplore.ieee.org/xpl/freeabs_all.jsp?arnumber=138664

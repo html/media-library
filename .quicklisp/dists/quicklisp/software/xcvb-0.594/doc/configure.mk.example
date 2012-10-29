@@ -1,0 +1,162 @@
+##### Example configuration file for the XCVB Makefile #####
+##
+## Copy this file to ../configure.mk and edit it,
+## uncommenting and/or editing the lines that fit your configuration,
+## commenting out or deleting those that don't.
+##
+## Note that this file also provides the defaults used in the release tarball.
+##
+
+## Prefix from which to deduce various default locations
+PREFIX ?= /usr/local
+#PREFIX = /usr
+#PREFIX = /home/USER/.local
+
+
+#### Where to install executables?
+INSTALL_BIN ?= ${PREFIX}/bin
+#INSTALL_BIN := /usr/bin
+#INSTALL_BIN := /home/USER/bin
+
+
+### Where to find run-time configuration? [not currently used]
+INSTALL_ETC ?= ${PREFIX}/etc
+#INSTALL_ETC := /etc
+#INSTALL_ETC := /home/USER/.config
+
+
+### Where to put shared stuff? [Only used indirectly below]
+INSTALL_SHARE ?= ${PREFIX}/share
+#INSTALL_SHARE := /usr/share
+#INSTALL_ETC := /home/USER/.local/share
+
+### Where to put manual pages? [Don't have any of them yet!]
+##INSTALL_MAN = ${INSTALL_SHARE}/man
+##INSTALL_MAN1 = ${INSTALL_MAN}/man1
+
+
+### Image directory for lisp images.
+## Make sure the directory exists and you can write to it:
+## mkdir -p ${INSTALL_IMAGE} ; chown ${USER}.${GROUP} ${INSTALL_IMAGE}
+INSTALL_IMAGE ?= ${PREFIX}/lib/common-lisp/images
+#INSTALL_IMAGE := /usr/lib/common-lisp/images
+#INSTALL_IMAGE := /home/USER/.local/lib/common-lisp/images
+
+
+#### Where to install Lisp files?
+INSTALL_LISP ?= ${INSTALL_SHARE}/common-lisp
+#INSTALL_LISP := /usr/share/common-lisp
+#INSTALL_LISP := /home/USER/.local/share/common-lisp
+
+### Where to install Lisp source?
+LISP_SOURCE ?= ${INSTALL_LISP}/source
+
+### Where to install symlinks to ASDF systems?
+LISP_SYSTEMS ?= ${INSTALL_LISP}/systems
+
+#### Where to install the XCVB source, including important driver files?
+INSTALL_XCVB ?= ${LISP_SOURCE}/xcvb
+
+
+#### Where to find cl-launch?
+##
+## DEFAULT: look for it in your $PATH
+CL_LAUNCH ?= cl-launch
+##
+## You may want a specific version stashed somewhere else
+# CL_LAUNCH := /usr/bin/cl-launch
+# CL_LAUNCH := /usr/local/bin/cl-launch
+# CL_LAUNCH := /home/USER/bin/cl-launch
+# CL_LAUNCH := ${INSTALL_BIN}/cl-launch
+
+### Do you want to use a Lisp in particular?
+# LISP := sbcl
+# LISP := clisp
+# LISP :=
+LISP ?= sbcl
+
+#### What options to pass to cl-launch?
+##
+## DEFAULT: nothing
+## This assumes that the default will work because you have already configured
+## cl-launch and/or the underlying Lisp implementation, so it will find all
+## the required .asd's.
+CL_LAUNCH_FLAGS ?=
+##
+## If you want to specify a search order for Lisp implementations,
+## you may do it as follows (see cl-launch documentation for details)
+CL_LAUNCH_FLAGS += --lisp '${LISP} sbcl clisp ccl'
+##
+##
+## If you need to specify one or several paths where .asd files reside
+## that are needed by XCVB, use the --source-registry flag
+## DEFAULT: nothing (we assume your source registry is properly configured
+## by e.g. your ~/.config/common-lisp/source-registry.conf.d/
+## see the ASDF manual regarding the source-registry.
+#CL_LAUNCH_FLAGS += --source-registry .::
+#CL_LAUNCH_FLAGS += --source-registry ${HOME}/cl//:
+##
+##
+## If you want to make sure that cl-launch uses installed include files
+## (respectively, doesn't), use --include /a/b/c (respectively, --no-include)
+## This matters in image and fasls modes, not in standalone mode (see below).
+CL_LAUNCH_FLAGS += --no-include
+#CL_LAUNCH_FLAGS += --include ${LISP_SOURCE}/cl-launch
+#CL_LAUNCH_FLAGS += --include /usr/share/common-lisp/cl-launch
+#CL_LAUNCH_FLAGS += --include /home/USER/.local/share/common-lisp/cl-launch
+##
+## Verbose output to debug XCVB compilation
+#CL_LAUNCH_FLAGS += --verbose
+
+
+#### What kind of executable to create?
+##
+## DEFAULT: This will create a script wrapping a dumped image.
+## However, in this mode you *HAVE TO* define a IMAGE_DIR directory below.
+CL_LAUNCH_MODE ?= image
+##
+## This will create a script that will reload xcvb from fasl and
+## recompile the source whenever it changes. For xcvb developers only.
+#CL_LAUNCH_MODE := fasls
+##
+## This will create a standalone executable. The catch is that it requires
+## cl-launch >=2.10 and sbcl >=1.0.22 or clisp >=2.48.
+#CL_LAUNCH_MODE := standalone
+##
+
+
+#### Where to store build files?
+##
+## XCVB will keep a cache of object files, etc., in your $XCVB_CACHE.
+## The default is ${XDG_CACHE_HOME}/xcvb/ which defaults to ${HOME}/.cache/xcvb/
+## These files are shared between successive builds of different projects.
+## They may have random-looking names based on cryptographic digest of
+## the source code they were compiled from.
+##
+
+## DEFAULT: under ${XDG_CACHE_HOME}/xcvb, or else
+XCVB_CACHE ?=
+## Other suggestion: subdirectory cache/ under each project's current directory
+##
+## This will put object files under /tmp/fare/xcvb-build/
+## Beware that if you share the same object directory between projects
+## that use the Makefile backend with incompatible options, you'll have bad surprises,
+## as e.g. a CLISP tries to load SBCL images and fasls, or a SBCL with its builtin ASDF
+## tries to load a file that depends on a newer ASDF (the old one having been obliterated
+## with --setup /xcvb/no-asdf in the case of a build of XCVB itself).
+## In between configuration changes, and assuming the Makefile backend, you may want
+## to clear (rm -rf) this directory.
+#XCVB_CACHE := /tmp/fare/xcvb-cache/
+
+## For testing only, we need a workspace in which to put temporary stuff we create.
+## Files will appear in your $XCVB_WORKSPACE.
+## It is relative to your current directory by default.
+##
+XCVB_WORKSPACE := workspace/
+#XCVB_WORKSPACE := /tmp/fare/
+
+
+### Make option to parallelize the build
+PARALLELIZE ?= -j
+# For a N-core machine, you might want -l$((N+1))
+# PARALLELIZE ?= -j -l3

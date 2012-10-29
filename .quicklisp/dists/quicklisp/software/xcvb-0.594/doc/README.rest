@@ -1,0 +1,1935 @@
+.. ; -*- mode:rst; -*-
+
+===================================================================
+XCVB - an eXtensible Component Verifier and Builder for Common Lisp
+===================================================================
+
+The goal of this project is to have a scalable system
+to build large software in Common Lisp,
+featuring deterministic separate compilation and
+enforced locally-declared dependencies.
+
+
+.. Contents::
+..
+    1  About XCVB
+      1.1  Home page
+      1.2  Status
+      1.3  Supported Implementations
+      1.4  Getting Help
+      1.5  Downloading the Code
+      1.6  Dependencies
+      1.7  Documentation
+      1.8  Examples
+      1.9  Timeline
+    2  Using XCVB
+      2.1  Building XCVB
+      2.2  Starting a new XCVB project
+      2.3  Compiling with XCVB
+      2.4  Lisp Setup
+      2.5  Interactive update of a running image with XCVB driver
+      2.6  Makefile backend
+    3  Restrictions on your Lisp Code
+      3.1  Compile-time side-effects
+      3.2  Full library needed at compile-time
+      3.3  Optimization Settings
+    4  Combining Multiple Projects
+      4.1  Module Full Names
+      4.2  Source Registry
+      4.3  Module Name Resolution
+      4.4  Dumping Images
+    5  Additional Features
+      5.1  Lisp file generation
+      5.2  Data Dependencies
+      5.3  Conditional Dependencies
+      5.4  Warning Control
+      5.5  CL:REQUIRE
+      5.6  Creating Executables
+      5.7  Around-Compile Hook
+    6  Troubleshooting an XCVB build
+      6.1  Debugging the built system
+      6.2  Debugging the build
+      6.3  Profiling the build
+    7  XCVB and ASDF
+      7.1  XCVB builds depending on ASDF systems
+      7.2  ASDF systems depending on XCVB builds
+      7.3  Converting XCVB builds into ASDF systems
+      7.4  Converting ASDF systems into XCVB builds
+      7.5  ASDF extensions without XCVB equivalent
+      7.6  Undoing a conversion to XCVB
+      7.7  Fast non-enforcing builds using POIU
+    8  Frequently Asked Questions
+      8.1  Why can't module declarations be moved to a central file?
+      8.2  How do I prevent clash between incompatible FASLs?
+      8.3  What are CFASLs?
+      8.4  Why not just extend ASDF?
+      8.5  Why is XCVB so much bigger and more complex than ASDF?
+
+
+About XCVB
+==========
+
+Home page
+---------
+
+The home page of the project is at:
+
+	http://common-lisp.net/project/xcvb/
+
+
+Status
+------
+
+Bottom line:
+XCVB is available as a working deterministic build system for Common Lisp.
+It can already replace ASDF for the better
+in many cases and on most implementations that matter.
+But is not yet a universal replacement for it.
+
+The current version (in git master branch or the release tarball)
+can handle builds of very large and complex systems.
+It is not very user-friendly in its failure modes,
+though arguably still better than ASDF.
+
+You can either write your project directly as an XCVB build
+or automatically convert an existing ASDF project
+(manual work required if ASDF extensions are used).
+XCVB can then build your project directly (and sequentially),
+or you can use it in conjunction with ``make -j``
+to build your project in parallel,
+which on a SMP machine may end up being faster than ASDF.
+
+XCVB builds can depend on other builds and/or on ASDF systems.
+ASDF systems can be wholly migrated to XCVB and still work on ASDF
+(on implementations supported by XCVB above).
+Or a same piece of software can have both an XCVB build and an ASDF system,
+though you'll then have to manually maintain the coherence
+between the two system definitions.
+
+Hopefully a version 1.0 will be released at the end of this year (which?)
+that can seriously replace ASDF and provide a migration path.
+
+
+Supported Implementations
+-------------------------
+
+Here's a grid summarizing which Common Lisp implementations are supported,
+in decreasing order of how much we support them and how often we test them.
+
+============== ======= === ==== =========================
+Implementation support exe free Notes
+============== ======= === ==== =========================
+SBCL           full    Y   Y    Our main platform
+CCL            full    Y   Y    Well supported
+CLISP          full    Y   Y    most portable
+ECL            Y       Y   Y    has per-build .so
+CMUCL          Y       Y   Y
+LispWorks Pro  Y       Y   N
+Allegro        Y       N   N
+SCL            Y       N   N
+ABCL           limited N   Y    slow; no bundling yet
+XCL            limited N   Y    slow; no bundling yet
+MCL            N       N   Y    it's obsolete, quaint
+Genera         N       N   N    it's obsolete, quainter
+GCL            N       N   Y    it's obsolete, incomplete
+Cormanlisp     N       N   N    it's obsolete, incomplete
+LispWorks Per  N       N   N    it's crippled
+============== ======= === ==== =========================
+
+Note that only SBCL, CCL and CLISP
+are currently supported to compile XCVB itself.
+The same implementations, on Unix only, also support
+XCVB's advanced "farmer" mode of compilation through incremental forking.
+
+On the same implementations and also on
+ECL, CMUCL, and LispWorks Professional,
+you can create executables from your Lisp builds
+(column "exe" above).
+
+On Allegro and SCL, you can create images that can then
+be used by CL-Launch to wrap into an application,
+but XCVB cannot create an application at this point.
+
+While experimental support exists for ABCL and XCL,
+it is slow due to long lisp startup time;
+moreover, we cannot create images or bundles at this point.
+
+Some implementations are just not supported;
+they might never be, but do they really matter?
+They are obsolete or crippled.
+If one of them does matter to you, you may contact us to add support,
+or you can add the support yourself.
+Or then again, you can switch to a better implementation.
+
+
+Getting Help
+------------
+
+We have two mailing-lists, one reserved for announcements,
+``xcvb-announce`` http://www.common-lisp.net/mailman/listinfo/xcvb-announce
+and one open to general discussions,
+``xcvb-devel`` http://www.common-lisp.net/mailman/listinfo/xcvb-devel
+
+For reporting bugs, we also have opened a project on https://launchpad.net/xcvb
+
+
+Downloading the Code
+--------------------
+
+You can find a tarball containing XCVB ready to build,
+with all its dependencies (except a Lisp implementation)
+and a few generated files sufficient to bootstrap the whole thing in:
+
+           http://common-lisp.net/project/xcvb/releases/
+
+From the toplevel directory of the expanded release tarball,
+you can afterwards ``make update``
+and it will update XCVB and its dependencies to the latest version.
+
+If you want instead to download XCVB as part of
+your pre-existing Lisp development environment,
+you will have to also download all our `dependencies`_.
+You can checkout our public repository with::
+
+	git clone git://common-lisp.net/projects/xcvb/xcvb.git
+
+Or if you are a project member, you can obtain write access using::
+
+	git clone ssh://USER@common-lisp.net/project/xcvb/git/xcvb.git
+
+You can also browse the repository at either of these:
+
+	http://common-lisp.net/gitweb?p=projects/xcvb/xcvb.git
+
+	http://github.com/fare/xcvb/tree/master
+
+
+Dependencies
+------------
+
+As mentioned above, you can find a tarball with all dependencies
+sufficient to bootstrap XCVB at:
+
+           http://common-lisp.net/project/xcvb/releases/
+
+You will still need a Lisp implementation to build and run XCVB itself,
+and to build and run the target software that you will build with XCVB:
+
+  * We develop mainly with SBCL (CFASL support is included in SBCL 1.0.30.4 or later):
+        - homepage: http://sbcl.sourceforge.net/
+	- CLiki page: http://cliki.net/SBCL
+        - get it from: http://sbcl.sourceforge.net/platform-table.html
+
+  * We also make our best to keep it running with the following other Lisp implementations:
+	- Clozure CL: http://ccl.clozure.com/
+	- GNU CLISP: http://clisp.cons.org/
+
+  * We unhappily haven't had resources to port it to other implementations yet,
+    but porting should hopefully be easy:
+    you can grep for e.g. ``clozure`` to find the few spots where
+    there are implementation dependencies, and flesh out
+    some variant for your favorite implementation there.
+    We will assist you, and may even do it for you if we have access
+    to the implementation on top of which you are interested in using XCVB.
+
+If you want to automatically download all of XCVB's dependencies,
+you may run this command from the ``xcvb/`` directory::
+
+	make -f doc/Makefile.release checkout
+
+If you prefer to collect XCVB's dependencies manually into your system,
+you should consult the above file, as it is the authoritative source
+for the list of XCVB dependencies.
+These dependencies include libraries
+that support being compiled with XCVB natively,
+and libraries that require patching to support being compiled with XCVB.
+If you don't use the patched versions of those libraries,
+you may have to compile XCVB using ASDF.
+
+The dependencies that support XCVB natively include:
+
+  * ASDF 2.017 or later, aka ASDF 2:
+	- homepage: http://cliki.net/asdf
+	- getting it:
+		``git clone git://common-lisp.net/projects/asdf/asdf.git``
+        - getting it, if you're an ASDF project member:
+		``git clone ssh://USER@common-lisp.net/project/asdf/asdf.git``
+
+  * POIU for fast (parallelized) non-enforcing build:
+	- homepage: http://common-lisp.net/project/qitab/
+	- getting it:
+		``git clone git://common-lisp.net/projects/qitab/poiu.git``
+        - getting it, if you're a QITAB project member::
+		``git clone ssh://USER@common-lisp.net/project/qitab/git/poiu.git``
+
+  * Our fork of ``asdf-dependency-grovel``:
+	- homepage: http://cliki.net/asdf-dependency-grovel
+	- getting it:
+		``git clone git://common-lisp.net/projects/xcvb/asdf-dependency-grovel.git``
+        - getting it, if you're an XCVB project member:
+		``git clone ssh://USER@common-lisp.net/project/xcvb/git/asdf-dependency-grovel.git``
+
+  * cl-launch 3.011 or later:
+	- homepage: http://cliki.net/CL-Launch
+	- getting it:
+		``git clone git://common-lisp.net/projects/xcvb/cl-launch.git``
+        - getting it, if you're an XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/cl-launch.git``
+
+  * command-line-arguments:
+	- homepage: http://common-lisp.net/project/qitab/
+	- getting it:
+		``git clone git://common-lisp.net/projects/qitab/command-line-arguments.git``
+        - getting it, if you're a QITAB project member::
+        	``git clone ssh://USER@common-lisp.net/project/qitab/git/command-line-arguments.git``
+
+  * fare-utils:
+	- homepage: http://cliki.net/fare-utils
+	- getting it:
+		``git clone git://common-lisp.net/users/frideau/fare-utils.git``
+        - getting it, if you're frideau::
+        	``git clone ssh://frideau@common-lisp.net/home/frideau/git/fare-utils.git``
+
+  * fare-matcher:
+	- homepage: http://cliki.net/fare-matcher
+	- getting it:
+		``git clone git://common-lisp.net/users/frideau/fare-matcher.git``
+        - getting it, if you're a QITAB project member::
+        	``git clone ssh://frideau@common-lisp.net/home/frideau/git/fare-matcher.git``
+
+  * fare-mop:
+	- homepage: http://cliki.net/fare-matcher
+	- getting it:
+		``git clone git://common-lisp.net/users/frideau/fare-matcher.git``
+        - getting it, if you're a QITAB project member::
+        	``git clone ssh://frideau@common-lisp.net/home/frideau/git/fare-matcher.git``
+
+  * quux-iolib:
+	- homepage: http://cliki.net/quux-iolib
+	- getting it:
+        	``git clone git://common-lisp.net/projects/xcvb/quux-iolib.git``
+        - getting it, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/quux-iolib.git``
+
+  * libfixposix, a dependency of iolib that you'll need if you use our `farmer` extension:
+	- homepage: http://common-lisp.net/project/iolib/
+	- getting it:
+        	``git clone git://gitorious.org/libfixposix/libfixposix.git``
+
+  * iolib, that you'll need if you use our `farmer` extension:
+	- homepage: http://common-lisp.net/project/iolib/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/iolib.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/iolib.git``
+	- getting the upstream repository:
+        	``git clone git://gitorious.org/libfixposix/libfixposix.git``
+        - see also the Windows port:
+                http://src.knowledgetools.de/tomas/winapi/index.html
+
+  * ironclad, for cryptography:
+	- homepage: http://www.method-combination.net/lisp/ironclad/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/ironclad.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/ironclad.git``
+	- getting the upstream repository:
+		``git clone git://github.com/froydnj/ironclad.git``
+
+  * binascii for printing cryptographic digests:
+	- homepage: http://www.cliki.net/binascii
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/binascii.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/binascii.git``
+	- getting the upstream repository:
+		``git clone git://github.com/froydnj/binascii.git``
+
+  * alexandria:
+	- homepage: http://common-lisp.net/project/alexandria/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/alexandria.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/alexandria.git``
+	- getting the upstream repository:
+        	``git clone git://common-lisp.net/projects/alexandria/alexandria.git``
+
+  * cffi:
+	- homepage: http://common-lisp.net/project/cffi/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/cffi.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/cffi.git``
+	- getting the upstream repository:
+        	``git clone git://common-lisp.net/projects/cffi/cffi.git``
+
+  * Babel:
+	- homepage: http://common-lisp.net/project/babel/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/babel.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/babel.git``
+	- getting the upstream repository:
+		``darcs get http://www.common-lisp.net/project/babel/darcs/babel``
+
+  * Closer to MOP:
+	- homepage: http://common-lisp.net/project/closer/closer-mop.html
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/closer-mop.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/closer-mop.git``
+	- getting the upstream repository:
+		``darcs get http://common-lisp.net/project/closer/repos/closer-mop``
+
+  * named-readtables:
+	- homepage: http://common-lisp.net/project/editor-hints/darcs/named-readtables/doc/named-readtables.html
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/named-readtables.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/named-readtables.git``
+	- getting the upstream repository:
+		``darcs get http://common-lisp.net/project/editor-hints/darcs/named-readtables``
+
+  * trivial-garbage:
+	- homepage: http://www.cliki.net/trivial-garbage
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/trivial-garbage.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/trivial-garbage.git``
+	- getting the upstream repository:
+		``darcs get http://common-lisp.net/~loliveira/darcs/trivial-garbage/``
+
+  * trivial-feature:
+	- homepage: http://www.cliki.net/trivial-feature
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/trivial-feature.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/trivial-feature.git``
+	- getting the upstream repository:
+		``darcs get http://common-lisp.net/~loliveira/darcs/trivial-feature/``
+
+  * bordeaux-threads:
+	- homepage: http://common-lisp.net/project/bordeaux-threads/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/bordeaux-threads.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/bordeaux-threads.git``
+	- getting the upstream repository:
+		``git clone git://common-lisp.net/projects/bordeaux-threads/bordeaux-threads.git``
+
+  * rucksack:
+	- homepage: http://common-lisp.net/project/rucksack/
+	- getting our XCVB-patched version:
+        	``git clone git://common-lisp.net/projects/xcvb/rucksack.git``
+        - getting our XCVB-patched version, if you're a XCVB project member::
+        	``git clone ssh://USER@common-lisp.net/project/xcvb/git/rucksack.git``
+	- getting the upstream repository:
+		``cvs -d :pserver:anonymous:anonymous@common-lisp.net:/project/rucksack/cvsroot checkout rucksack``
+
+Note that you'll have to checkout these dependencies in a tree
+that you register in your Lisp source-registry (see ASDF documentation)
+for ASDF and/or XCVB to be able to see them.
+If you want to compile XCVB using itself,
+you'll also have to ensure you avoid conflicts when setting up your source-registry.
+
+Moreover, cl-launch requires special installation of both its executable
+in your ``PATH`` and its (self-extracted) library files
+in your ASDF or XCVB configured paths.
+See ``00INSTALL`` in the cl-launch source repository for more information.
+
+Note that the release tarball includes an installation procedure that
+should take care of all of the above for you. See the ``INSTALL`` file
+in your toplevel release directory,
+also available as ``doc/INSTALL.release`` in your XCVB source checkout.
+
+
+Documentation
+-------------
+
+``doc/README.rest``
+	The present file describes how to currently use XCVB.
+
+``doc/xcvb.rest`` ``doc/ilc09-xcvb.rest`` ``doc/ilc09-xcvb-slides.rest``
+	These files should provide with an overview of the project,
+	its intended benefits, rationale and general design.
+
+``doc/ilc09-xcvb-paper.tex`` ``doc/xcvb.bib`` ``doc/sigplanconf.cls``
+	These source files compile to a PDF for the demonstration
+        that was presented at ILC'2009 for XCVB.
+
+``doc/INTERNALS.rest``
+	This file is an introduction to the internals of XCVB
+        for hackers interested in debugging or extending it.
+
+``doc/TODO.rest``
+	The many prioritized TO DO items on our plate to improve XCVB.
+        Some already implemented items should be moved to current documentation.
+
+``doc/configure.mk.example``
+	example file to copy into ``configure.mk`` (in the main XCVB directory) and edit,
+	so as to be able to create the ``xcvb`` executable.
+
+``Makefile.release``
+	the ``Makefile`` for XCVB itself is an example
+        for how to integrate XCVB in your ``Makefile``.
+
+``INSTALL.release``
+	instructions for installing XCVB from the expansion of a release tarball.
+
+
+Examples
+--------
+
+XCVB itself is an example.
+Simpler examples are available in directory ``examples``.
+The simplest are ``example-1`` and ``example-2``.
+A more complete kind of Common Lisp application is ``hello``
+See each time the source code and the associated ``Makefile``.
+
+
+Timeline
+--------
+
+The original idea for what became XCVB is due to James Knight,
+in 2007 discussions about the failure of POIU and ASDF-DEPENDENCY-GROVEL
+to yield a *maintainable* alternative to serial ASDF systems
+for the QRes project at ITA Software.
+
+XCVB was originally written by Spencer Brody under the supervision of
+Francois-Rene Rideau from late May to mid August 2008.
+The result was a working prototype,
+but lacking in features and requiring some layer of manual hacks
+specific to the target on which XCVB was run.
+
+Francois-Rene Rideau restarted work on it
+and released in mid December 2008
+a version of the prototype where the above hacks were automated away.
+A paper about the prototype was presented at ILC'09.
+The prototype can be retrieved in the git branch ``v0.1-prototype``.
+
+Francois-Rene Rideau then undertook a complete rewrite of XCVB
+to make its architecture more general and actually extensible
+building on the lessons of the prototype.
+A semi-usable product was published in May 2009,
+and usable release tarballs have been produced since July 2009,
+with notable contributions from Joyce Chen and Matthew Steele.
+
+In late August 2009, we released XCVB 0.366
+which successfully compiled a large system at ITA.
+
+In 2011 Q2-Q3, Francois-Rene Rideau and Peter Keller have worked
+on making XCVB more usable on more implementations,
+so that it may be a valid replacement to ASDF,
+and notably added support for building executable files.
+
+We are working hard towards making a 1.0 release
+usable by random Common Lisp programmer by Spring (which year?).
+
+Subscribe to one of our mailing-lists
+if you're interested in learning about our progress
+or in influencing our design.
+
+
+Using XCVB
+==========
+
+You may want to checkout the latest XCVB from git.
+We'll tag stable releases when there are some.
+
+
+Building XCVB
+-------------
+
+The simple way to build XCVB is to use our release tarballs,
+and just follow the instructions in the ``INSTALL`` file.
+
+The hard way to build XCVB is to install all the dependencies as listed above,
+then create and edit your own ``configure.mk`` from ``doc/configure.mk.example``.
+You'll notably need to configure those dependencies to work with ASDF.
+Typically, you'll download all the code under ``~/.local/share/common-lisp/source/``
+or another place configured in your ASDF source-registry.
+Alternatively, you can provide an appropriate ``--source-registry`` option to ``cl-launch``.
+You can now to bootstrap XCVB using ASDF with ``make xcvb-using-asdf``.
+If successful, you may finally complete the bootstrap of XCVB using XCVB itself,
+by exporting the proper ``CL_SOURCE_REGISTRY`` and then invoking ``make xcvb``.
+
+Assuming you installed ``xcvb`` into some directory in your ``$PATH``,
+you can test that XCVB built correctly by using the following query commands::
+
+	xcvb version
+	xcvb show-source-registry
+
+
+Starting a new XCVB project
+---------------------------
+
+The general principle is that every Lisp file starts with a form like::
+
+       #+xcvb (module (:depends-on ("packages" "macros" "specials" "foo")))
+
+That form specifies all the dependencies of the Lisp file
+and nothing but its dependencies.
+Optionally, you can distinguish
+between ``:compile-depends-on``
+and ``:load-depends-on``
+and even ``:cload-depends-on``:
+
+
+ * ``:load-depends-on`` specifies what must be loaded before the compiled FASL file may be loaded.
+ * ``:compile-depends-on`` specifies what must be loaded before the Lisp file may be compiled
+   (by default, the compile-time versions of the files listed in ``:load-depends-on`` above;
+   where compile-time version is a CFASL if available, or else a FASL).
+ * ``:cload-depends-on`` specifies what must be loaded before the compiled CFASL file may be loaded
+   when compiling files that depend on it, assuming CFASLs are available
+   (by default, the same as ``:compile-depends-on`` above;
+   it should probably always be a subset thereof).
+ * ``:depends-on`` specifies what must be loaded no matter what in all the above cases.
+
+Finally, a main file called ``build.xcvb``
+is the main file that needs to be loaded in the final image.
+It is typically empty except for the module form specifying
+all its dependencies
+and possibly some finalization forms to run at the end of the build.
+The dependencies typically include ASDF libraries,
+currently specified in an ugly way as dependencies of the build image.
+The ``build.xcvb`` file for Exscribe_ is as follows::
+
+	#+xcvb
+        (module
+          (:fullname "fare.tunes.org/exscribe"
+           :nicknames ("exscribe")
+           :supersedes-asdf ("exscribe")
+           :build-depends-on ("/cl-launch" "/fare-utils"
+                              "/fare-matcher" "/scribble"
+                              (:asdf "cl-typesetting"))
+           :depends-on ("scheme-compat" "exscribe"
+                        "exscribe-html" "exscribe-txt" "exscribe-typeset")
+           :pre-image t
+           :build-image t))
+
+You don't need to specify all your files in the ``build.xcvb`` module form,
+only those containing the functions you really care about,
+since the load dependencies will be automatically identified and loaded.
+
+
+Compiling with XCVB
+-------------------
+
+The most portable way to compile with XCVB is
+to use its ``simple-build`` backend::
+
+	xcvb simple-build --build /foo/bar
+
+Where ``/foo/bar`` is the fullname of your target.
+The target is usually a build, but
+it can be a single Lisp module or an executable.
+If you do not specify a build name,
+XCVB will attempt to use the build in the current working directory.
+
+Note that you need to properly setup your `Source Registry`_
+which can be overridden with ``CL_SOURCE_REGISTRY``
+or by specifying option ``--source-registry``::
+
+	--source-registry /home/luser/my/project//:
+
+Also, by default, XCVB will use the same implementation
+that it was compiled with. You can override this default with::
+
+        --lisp-implementation sbcl
+
+If the implementation is not in your ``PATH`` or has a non-standard name,
+you may override with::
+
+        --lisp-binary-path /home/luser/hacks/bin/sbcl
+
+If needed, make sure you export the proper
+``SBCL_HOME`` or ``CCL_DEFAULT_DIRECTORY``, etc.,
+or that you use some wrapper script that does
+before it invokes your actual Lisp binary.
+
+Finally, object files by default will be stored
+in a directory under ``~/.cache/xcvb/`` such as
+``/home/luser/.cache/xcvb/sbcl-1.0.49-linux-x64/``.
+You can override the base directory by exporting ``XCVB_CACHE``
+of passing the argument::
+
+	--cache /tmp/luser/xcvb-cache/
+
+You can override the object directory by exporting ``XCVB_CACHE_OBJECTS``
+(relative to the xcvb cache, if a relative pathname), or passing the argument::
+
+	--cache-objects /tmp/luser/xcvb-cache/my-sbcl-r12345/
+
+Once you've build a target, say the executable ``/xcvb/example-1/example-1``
+you can install it somewhere you like::
+
+	cp $(xcvb show cache-objects)/xcvb/example-1/example-1 /my/install/bin/
+
+As an example of how to put it all together, see the ``Makefile``
+of one of the XCVB examples or of XCVB itself.
+
+
+Lisp Setup
+----------
+
+It is often useful to setup your target Lisp system
+before you start to compile files and build images with it.
+
+Such setup may include
+proclaiming optimization settings, (see below `Optimization Settings`_),
+configuring variables that control your Lisp implementation,
+selecting compiler warnings you want to silence (see below `Warning Control`_),
+pushing ``*features*`` for conditional compilation
+based on e.g. some environment variables,
+initializing some pathname translation layer such as logical pathnames,
+loading specialized handlers for ASDF-DEPENDENCY-GROVEL when it is used,
+configuring or extending the XCVB driver itself,
+etc.,
+to name a few things that have been done as part of ITA Software's build.
+(Also, loading and configuring ASDF 1 was one major such thing,
+that's happily not needed anymore.)
+
+The setup file is specified with option ``--setup`` to ``xcvb simple-build``,
+followed by the fullname of an XCVB Lisp module,
+following usual XCVB naming conventions.
+For instance, assuming your project has fullname ``/foo/bar``,
+you may create an XCVB module called ``setup.lisp`` under your build directory,
+and specify ``--setup /foo/bar/setup`` as arguments to ``xcvb simple-build``.
+
+By default, XCVB will start the build by dumping an image
+starting from the specified implementation binary and image,
+and loading the XCVB driver followed by any setup you specified.
+This is often useful for performance reasons
+if your setup is non-trivial, or
+if there will be a large number of files being compiled from the initial setup
+(because their respective builds do not otherwise specify or inherit a pre-image).
+There are cases however, for instance in a small project with a trivial setup,
+where you will prefer to eschew the automated dumping of this initial base image
+(especially on implementations such as CCL
+where dumping is much slower than loading FASLs).
+In these cases, you pass to ``xcvb simple-build`` the option
+``--no-base-image``.
+
+
+
+Interactive update of a running image with XCVB driver
+------------------------------------------------------
+
+``/xcvb/driver`` is a small standalone Lisp file.
+It allows you to build some Lisp software cleanly in a subprocess
+then load the results into the current image.
+
+When you call ``xcvb-driver:build-and-load``
+(which also has the short-hand ``xd:bnl``),
+it will use ``run-program`` to invoke a slave XCVB process
+that will drive all the compilation out-of-image
+then reply to the master with a specification of files to load.
+The function takes as arguments the name of a build and a flurry of options.
+The build specifies what you want to update;
+the options precisely match those of ``xcvb simple-build``
+(or more precisely, those of ``xcvb make-makefile`` — see below).
+
+The slave will complete the build then reply with a list of files to load,
+including a TTH_ digest of each file
+so the master can skip the files
+of which the very same version has already been loaded.
+The slave will do all the cryptographic hashing on its side,
+so you don't have to include crypto libraries in your image ---
+or anything beside the simple and short ``xcvb-driver``.
+
+.. _TTH: http://en.wikipedia.org/wiki/Hash_tree#Tiger_tree_hash
+
+The XCVB driver includes the interface and initial configuration,
+so your Lisp process may call XCVB to build software,
+and load this software in its current image.
+
+If you're using ASDF, you can load the XCVB driver with
+with ``(asdf:load-system :xcvb-driver)``.
+Or you can load it from a bare Lisp image with
+``(load "/path/to/xcvb/driver.lisp")``
+as an alternative to using ``asdf.lisp`` itself
+to drive further compilations.
+
+The XCVB driver can advantageously replace ASDF,
+as it has a noticeably smaller footprint,
+doesn't pollute the current process with artefacts of compilation
+or the compilation with the artefacts of the current process,
+doesn't have as many multithreading concurrency issues
+as compiling in-process can raise,
+and preserves determinism and reusability in the FASL files being built.
+
+Note that if you built your Lisp image using ASDF
+or one of our ASDF-based backends (such as our non-enforcing parallel build),
+then XCVB master will not be able to assess
+which version of which files have already been loaded,
+and will basically rebuild and reload everything using our enforcing backend.
+However it you used ASDF, you can still use
+the usual ASDF mechanisms to update your system.
+
+Also note that the usual restrictions apply
+as to any update of a running Common Lisp image,
+whether using ASDF, XCVB, SLIME, or any other tool,
+or directly using ``compile-file`` and ``load``:
+
+  * errors may happen if you change a symbol's nature
+    between lexical, special, constant or symbol-macro as a variable,
+    or between simple function, generic function or macro as a function.
+
+  * errors may happen if you change the signature of a generic function,
+    the definition of a structure type, if you fail to provide appropriate
+    methods on ``update-instance-for-redefined-class``, etc.
+
+  * side-effects may override your variables
+    (such as from ``setf`` or ``defparameter``).
+
+  * the order in which side-effects happen or fail to happen
+    (as XCVB master skips files an identical copy of which was already loaded)
+    can trigger subtle bugs in your code
+    (watch any compile-time dictionaries your code may use).
+
+More generally, the correct loading a file may implicitly require
+pre-conditions that are valid in a clean build,
+but violated in an incremental load.
+Some of these issues can be worked around by
+manually uninterning specific symbols,
+clearing and rebuilding dictionaries or twiddling specific entries,
+unregistering and re-registering specific hooks,
+deleting and re-creating specific packages, etc.
+(see for instance the ``/xcvb/no-asdf`` used with ASDF 1,
+or the many hot-upgrade mechanisms used by ASDF 2).
+Unhappily, there is no general solution to this problem,
+and that we know, no declarative meta-level protocol
+was devised to help alleviate it.
+
+
+Makefile backend
+----------------
+
+If you have a multicore machine (most machines are today),
+XCVB allows you to compile your project in parallel
+with its Makefile backend.
+
+You first need to have XCVB generate a ``Makefile`` for your project
+with the ``make-makefile`` command,
+then to invoke ``make(1)`` with this ``Makefile``.
+
+A simple example would be::
+
+	xcvb make-makefile --build /foo/bar
+
+Where ``/foo/bar`` is the fullname of your target as usual:
+a build, or a single Lisp module, or an executable.
+As for the ``simple-build`` backend, you may have to specify various
+arguments such as ``--source-registry``, ``--lisp-implementation``,
+``--lisp-binary-path``, ``--cache``, ``--cache-objects``, etc.
+
+The default name for said generated ``Makefile``
+is actually ``xcvb.mk`` in the current directory,
+but you can override either or both of this name and that directory
+with the ``--output-path`` option to ``make-makefile``.
+
+For a correct build, it is recommended that you should run
+the ``xcvb make-makefile`` command before every time you build,
+in case any dependency has changed due to some modification.
+XCVB should be fast and this shouldn't be a problem.
+If making the ``Makefile`` takes more than a few seconds,
+there's probably a performance bug and you should contact us.
+
+After obtaining your ``xcvb.mk``, you may invoke ``make(1)``
+using this output file in the following way::
+
+	make -f xcvb.mk -j
+
+``-j`` specifies a parallel build (also see ``make`` option ``-l``).
+
+As an example of how to put it all together, see
+the ``Makefile`` of the XCVB examples, of XCVB itself, or of exscribe_.
+
+.. _exscribe: http://www.cliki.net/exscribe
+
+
+Restrictions on your Lisp Code
+==============================
+
+Compile-time side-effects
+-------------------------
+
+To conform with the CLHS_ (see `section 3.2.2.3`_),
+any ``defun``, ``defvar`` or other side-effect
+must be effected in the compilation environment
+to be available for use in macros,
+while compiling either the current file or any further file.
+This means that these effects should be enclosed in an
+``(eval-when (:compile-toplevel :load-toplevel :execute) ...)``.
+(See on my blog a discussion of `eval-when`_.)
+
+.. _CLHS: http://www.lispworks.com/documentation/HyperSpec/Front/index.htm
+.. _section 3.2.2.3: http://www.lispworks.com/documentation/HyperSpec/Body/03_bbc.htm
+.. _eval-when: http://fare.livejournal.com/146698.html
+
+Respecting that constraint will allow for
+faster recompilation (where CFASLs are available),
+since CFASLs may be smaller and faster to load than FASLs,
+and subject to less variation which may trigger fewer recompilations.
+It will also allow for easier cross-compilation
+and more generally situations where the target image
+should be different from compilation environment,
+which was no doubt a strong motivating factor
+behind this constraint being made part of the standard to begin with.
+And of course, you can have a stronger claim of standard compliance.
+
+This constraint is both enforced and taken advantage of
+when you use the CFASL option of XCVB.
+This option is enabled by default on implementations that support it,
+currently only SBCL
+(but there are plans for Clozure CL to support it if and when XCVB takes off).
+See our FAQ `What are CFASLs?`_.
+
+When you use this option, ``(:compile "foo")`` dependencies
+turn into ``(:cfasl "foo")`` and specify that the specified CFASL will be loaded.
+(This is what ``"foo"`` expands into for ``:compile-depends-on``
+as explicitly specified or inherited from ``:depends-on``);
+your effects will then be available if and only if you used
+``:compile-toplevel`` in your ``eval-when``.
+When you don't use this option ``(:compile "foo")`` dependencies
+turn into ``(:fasl "foo")`` and specify that the specified FASL will be loaded instead;
+your effects will then be available if and only if you used
+``:load-toplevel`` in your ``eval-when``.
+Finally, some other programs (notably ASDF-DEPENDENCY-GROVEL) will load your source code
+at which point your effects will be available if and only if you used
+``:execute`` in your ``eval-when``.
+Therefore, any form whose effects must be available in the compilation environment
+*must* be enclosed in ``(eval-when (:compile-toplevel :load-toplevel :execute) ...)``.
+Other forms can be used without ``eval-when``, which is the same as enclosing them in
+``(eval-when (:load-toplevel :execute) ...)``.
+
+Note that this differs notably from ASDF.
+On the one hand, ASDF always loads the FASL before it compiles more things,
+so you don't need an ``eval-when`` around functions that are only used by macros
+when these macros are expanded in a subsequent file rather than the same file.
+On the other hand, ASDF doesn't support loading CFASLs, so that effects that only
+happen at compile-toplevel are lost during an incremental compilation.
+
+Finally, neither FASL nor CFASL includes
+read-time or macroexpansion-time side-effects,
+except as materialized in the resulting code as read then expanded.
+Therefore to preserve incremental compilation with either XCVB or ASDF,
+you must not rely on such side-effects to have been effected
+outside of the file where they happen,
+unless you also include them in the expansion.
+
+
+Full library needed at compile-time
+-----------------------------------
+
+Sometimes, you actually want the full run-time power
+of a library to be available at compile-time,
+rather than only the definition of its macros and other usual compile-time side-effects.
+
+You can achieve this by including your required dependencies in the
+``:build-depends-on`` option of your ``build.xcvb``,
+or the ``:compile-depends-on`` option of your Lisp module
+(and possibly the ``:cload-depends-on`` option).
+
+Indeed, when you specify a dependency in a ``:depends-on`` clause,
+the dependency will be added to the load dependencies of the module
+as if by ``:load-depends-on``,
+and the compile-time-only version of the dependency (if available)
+will be added to the compile dependencies of the module,
+as if by ``:compile-depends-on``.
+For instance, a ``:depends-on (... "foo" ...)`` will specify
+a load-time dependency on ``(:fasl "foo")`` and
+a compile-time dependency on ``(:cfasl "foo")``.
+
+Note however that nothing is done to prevent the FASL and CFASL from both being loaded,
+in any order implicit in the transitive dependencies of a module.
+This can cause interesting surprises if any of those compile-time side-effects
+are not idempotent, and/or if loading the CFASL resets some work done by the FASL.
+Consider notably the proper use of ``defvar`` vs ``defparameter`` at compile-time.
+
+
+Optimization Settings
+---------------------
+
+Amongst compile-time side-effects, a notable one is the optimization settings.
+A default may to be set in your initial Lisp image setup
+(see above section `Lisp Setup`_)
+by modifying the variable ``xcvb-driver:*optimization-settings*``.
+For instance, your setup file may include::
+
+	(setf xcvb-driver:*optimization-settings* '(optimize (speed 1) (safety 3)))
+
+Modules that want to change these settings
+from this default specified for the compilation of just one file
+can ``declaim`` it, or
+``(eval-when (:compile-toplevel :load-toplevel :execute) (proclaim ...))`` it,
+or (more portably) ``(locally (declare ...) ...)`` it.
+You may define some macro that does that for you,
+that you will call at the beginning of relevant files.
+
+Note however that using ``declaim`` or ``proclaim`` may or may not
+have a different meaning in other build systems (e.g. ASDF)
+depending on implementations.
+Some implementations (like SBCL) will confine ``declaim`` settings
+and ``:compile-toplevel`` ``proclaim`` settings to the current file,
+while other implementations (like CCL, Allegro)
+will leak them to subsequent files,
+whereas ``:load-toplevel`` ``proclaim`` settings
+will usually leak to subsequent files when you load the FASL.
+
+This non-determinism is against the spirit of XCVB, and
+XCVB resets optimization settings to the declared default
+before each and every command issued to load or compile any file.
+When using ASDF, we have similarly been in the habit,
+which we recommend others to follow, to similarly reset optimization settings
+in a ``asdf:perform`` method ``:before`` or ``:around``
+the relevant operations
+(and we'll push for such method to be standardized in the upstream ASDF).
+
+
+Combining Multiple Projects
+===========================
+
+Module Full Names
+-----------------
+
+XCVB relies on a global namespace for developers to name modules.
+Using this namespace allows programmers to name modules independently
+from their specific location on any particular machine's filesystem.
+
+Thus each hierarchy of XCVB files contains a top-level ``build.xcvb`` file.
+This file contains a module declaration with a ``:fullname`` initializer
+that specifies a prefix name for all modules in the hierarchy.
+E.g. if your directory ``/foo/bar/`` has a file ``build.xcvb``
+containing the specification ``:fullname "lisp.example.com/quux"``
+then all files under this file hierarchy will be considered as being under
+the hierarchy ``lisp.example.com/quux`` within the global module namespace,
+unless overridden by a lower ``build.xcvb``.
+Thus, a file ``/foo/bar/baz/toto.lisp`` would inherit the fullname
+``lisp.example.com/quux/baz/toto``.
+
+Nicknames are also allowed, and the same ``build.xcvb`` could declare
+the nickname ``quux`` and the same file would then be accessible
+under the shorter name ``quux/baz/toto``.
+
+Note that everywhere that hierarchical module names are involved,
+XCVB uses the "``/``" character as a pathname directory separator,
+in a way that is guaranteed to work portably, however things may vary depending on
+Lisp implementation, Operating system, pathname host and device.
+Also, XCVB will only accept module names where all characters are valid: ``[-_.,A-Za-z0-9]``.
+XCVB build names are case-sensitive (unlike ASDF names)
+but it is strongly suggested to respect the current convention
+of using all lowercase names, and leaving ``_`` reserved to XCVB internals.
+Finally, XCVB assumes that Lisp files have type ``lisp`` as far as pathnames are considered.
+
+
+Source Registry
+---------------
+
+To map names to files on the current machine,
+XCVB relies on the user having properly configured
+the Common Lisp source registry.
+This registry is described in details in the ASDF 2 manual.
+
+Before XCVB actually tries to process any module,
+it will finalize its source-registry by eliminating all invalid paths
+from the source-registry, and eagerly collecting a list of all the top-level
+``build.xcvb`` files in the specified filesystem directories and hierarchies.
+For this reason, you will want to include as narrow directory hierarchies
+as you can in the search path. ``/opt/share/common-lisp/source/``
+is probably good, whereas ``/`` or ``/usr`` may result in minutes or hours
+being spent searching your whole filesystem in vain.
+
+Conflicts between two ``build.xcvb`` files
+claiming the same name or nickname are resolved as follows:
+if one ``build.xcvb`` appears in a hierarchy
+that appears earlier in the search path, then it takes precedence;
+if the previous rule doesn't disambiguate a name, then
+said name will be marked as a conflict and
+will be unavailable for use during the build.
+To avoid gratuitous conflicts,
+subdirectories named ``_darcs`` or ``.svn``
+are conspicuously not searched
+(see exclusions in the source-registry configuration).
+
+Importantly, an installed version of XCVB itself
+(at least its ``build.xcvb`` and ``driver.lisp`` in the same directory)
+must be present under the search path
+since XCVB will look for the module ``/xcvb/driver``
+to be included in the target Lisp image as a necessary prelude to any build.
+
+In a good installation of XCVB, this should be the case by default,
+and users would use ``!`` in their search path specifications
+to inherit this default;
+however, until XCVB comes packaged with your system,
+you shouldn't trust these defaults until you have verified them.
+
+You can query your current search path with the command::
+
+	xcvb show-source-registry
+
+Also available is the short-hand ``xcvb ssr``.
+
+*Note to people migrating from ASDF*:
+we are reusing the exact same code
+that ASDF 2 uses to process its source-registry.
+That code supersedes the old ``asdf:*central-registry*`` from ASDF 1.
+
+.. _ASDF: http://www.cliki.net/asdf
+
+
+Module Name Resolution
+----------------------
+
+When a module form refers to another module, it may use a short name.
+The algorithm by which a name reference is resolved to a full name is as follows.
+
+First, names that start with a ``/`` character are absolute names,
+and always refer to the global module namespace.
+When resolving an absolute name,
+the registered build with the longest matching path prefix is identified.
+If it is not found, or if there are several conflicting
+build files with that same fullname, then an error is raised.
+Otherwise, the rest of the name after stripping the prefix is used as
+a pathname relative to the identified build.
+
+Second, names that are not absolute are relative names.
+Attempt is successively made to resolve them
+relative to the current build and each of its ancestors.
+Failing that, they are resolved as absolute names as above.
+
+
+Dumping Images
+--------------
+
+Each build may specify with ``:build-image t``
+that an image should be dumped after the build is completed.
+This is most useful in your toplevel build to prepare an image
+from which you'll latter build an executable with ``cl-launch``,
+as explained in section `Compiling with XCVB`_.
+
+Each build may also specify with ``:pre-image t``
+that an image should be dumped before the build itself is started,
+containing all the dependencies specified with ``:build-depends-on``.
+This can notably speed up compilation if your build
+has both a lot of build dependencies and a lot of files,
+as compared to leaving this unspecified
+in which case all these many dependencies will be re-loaded
+before the compilation of each and every file in your build.
+
+In any case, whenever it compiles a build,
+XCVB will try to reuse an existing image if any is available,
+based on the first dependency.
+Therefore, to maximize image reuse, make sure that the first dependency
+listed in a build's ``:build-depends-on`` is itself
+a build that has a post- or pre- image
+that already includes as many dependencies as possible,
+in which case your build will inherit an image from the former build.
+
+
+Additional Features
+===================
+
+Lisp file generation
+--------------------
+
+XCVB supports the dynamic generation of Lisp files.
+
+Statements of generated files are to be included amongst the
+"extension forms" of your ``build.xcvb`` file,
+i.e. after the list of keyword options
+``(:fullname ... :depends-on ...)``.
+
+Here is the syntax::
+
+	(:generate
+         ((:lisp "lists"
+           :depends-on ("conditions" "util" "specials" "packages"))
+          (:lisp "hash-tables"
+           :depends-on ("lists"))
+          (:lisp "methods"
+           :depends-on ("api" "hash-tables")))
+         :depends-on ("build/dump"))
+
+In this example declaration, excerpted from ``cl-unicode``,
+``"lists"``, ``"hash-tables"``, and ``"methods"``
+are files that are generated by loading ``"build/dump"``.
+Each ``(:lisp ...)`` statement takes a name,
+then a list of keyword option as in a Lisp module specification.
+A grain for a Lisp module will thus be assumed,
+with the specified name relative to the current build.
+Dependencies for this module will be
+as specified statically from these keyword options.
+and not deduced dynamically from the contents of the file once created
+(indeed these contents may lack a module statement altogether).
+To build the specified Lisp files, the dependencies specified in
+the ``:depends-on`` argument will be loaded.
+These dependencies may usefully include in the end
+a statement like ``(:call :my-package :my-function)``
+to call a function to be defined in previously loaded dependencies,
+or like ``(:eval-string "(arbitrary lisp expression)")``
+to evaluate some arbitrary Lisp expression.
+
+Also note that if your file is to be computed by some arbitrary shell command
+that does not reduce to the loading of a Lisp file, then
+XCVB doesn't currently support the explicit specification of such a thing;
+however you can instead insert such a dependency directly in your ``Makefile``
+as below, have that ``Makefile`` include your ``xcvb.mk``,
+and invoke ``make(1)`` with that ``Makefile``::
+
+	version.lisp: version.text
+		echo "(in-package :foo)(defparameter *version* \"$$(cat version.text)\")" > $@
+	include xcvb.mk
+
+
+Data Dependencies
+-----------------
+
+XCVB supports the declaration of dependencies on data files
+during the building of some targets.
+
+Here is the current temporary syntax::
+
+	(:depends-on ("build/read" "build/char-info" "build/util" "util" "specials" "packages")
+         :load-depends-on ((:source "build/data/BidiMirroring.txt")
+                           (:source "build/data/Blocks.txt")
+                           (:source "build/data/DerivedAge.txt")
+                           (:source "build/data/Jamo.txt")
+                           (:source "build/data/PropList.txt")
+                           (:source "build/data/Scripts.txt")
+                           (:source "build/data/UnicodeData.txt")))
+
+This example, excerpted from ``cl-unicode`` shows how
+loading the current module ``build/dump``
+depends on bunch data files in ``build/data``.
+
+
+Conditional Dependencies
+------------------------
+
+XCVB supports the specification of conditional dependencies
+using the following syntax for dependencies:
+
+	``(:when (:featurep (:or :sbcl :cmu)) "pcl")``
+
+When such a dependency is specified, the module named ``"pcl"``
+(relative to the current build's fullname) will be included
+when and only when the target Lisp implementation has the feature
+``:sbcl`` or the feature ``:cmu``, i.e. is SBCL or CMUCL.
+
+Note that XCVB does *not* support CL-style conditional reading with
+``#+`` and  ``#-`` within the ``(module ...)`` form.
+Instead the form is read in a dynamic context
+where ``*features*`` has been bound to ``'(:xcvb)``.
+Indeed, read-time conditionals lose information at read-time
+whereas XCVB purports to build a faithful model of the whole build,
+from which one could e.g. extract a list of source files.
+
+
+Warning Control
+---------------
+
+XCVB provides a simple way to specify which compiler conditions (style-warnings, etc.)
+to show to the user and which to muffle.
+This feature is very useful to make sure that warnings the user cares about are caught,
+whereas those considered as noise are filtered out.
+
+This feature is defined in ``driver.lisp`` (fullname ``/xcvb/driver``),
+the one file included in all target images by XCVB.
+You may modify the special variable ``xcvb-driver:*uninteresting-conditions*``
+in the file you specify through XCVB's ``--setup`` option.
+
+How to identify compiler conditions is specific to your Lisp implementation.
+Typically you may have to grep the sources of said implementation to find
+a condition type or a simple-condition's format-control string.
+In more advanced cases, you may can define your own predicate to
+discriminate the conditions you're looking to keep or eliminate.
+
+
+CL:REQUIRE
+----------
+
+Any dependency of the form ``(:require :foo)``
+will be interpreted as the need to call ``CL:REQUIRE``
+to load the implementation-dependent feature ``:foo``.
+The argument can be a string or a keyword, and is usually written
+as an upper-case string or a lower-case keyword (which will be case-converted).
+
+These things are implementation-dependent, and so often used in conjunction
+with ``:when`` or ``:cond``.
+For instance, such popular components
+include ``:sb-posix`` and ``:sb-bsd-sockets`` under SBCL.
+In your ``build.xcvb`` you would use::
+
+	:depends-on (... (when (:featurep :sbcl) (:require :sb-posix)) ...)
+
+In ASDF, you might either call ``#+sbcl (require :sb-posix)`` directly in the ``.asd`` file,
+or rely on these features also having a corresponding ASDF definition
+and specify in your ``defsystem`` form::
+
+	:depends-on (... #+sbcl :sb-posix ...)
+
+In this case, the same trick of
+depending on ``(:asdf :sb-posix)`` in your ``build.xcvb`` may work.
+
+If you need some magic side-effects before or after requiring the feature,
+you are better off doing it in your `Lisp setup`_ file.
+
+Finally, if you are requiring this feature in a Lisp file that may be loaded directly
+as well as built as part of a larger system,
+then you may also have to do things the hard way:
+include the following in your initial package definition file,
+after your ``(cl:in-package :cl-user)`` statement,
+and before any ``(defpackage ...)`` clause that may import
+anything defined by the required feature::
+
+	(eval-when (:compile-toplevel :load-toplevel :execute)
+          #+sbcl (require :sb-posix))
+
+
+Creating Executables
+--------------------
+
+You may create executables with extension form ``:executable``.
+
+Supported implementations are: CCL, CLISP, SBCL, LispWorks.
+
+Amongst the extensions forms of your module declaration,
+you may include any number of ``:executable`` specifications.
+The syntax is a list beginning with ``:executable``
+followed by the name of the executable
+(which is relative to the name of the build),
+followed by keyword arguments.
+
+Accepted keyword arguments are ``:depends-on``, ``:pre-image-dump``,
+``:post-image-restart`` and ``:entry-point``.
+``:depends-on`` followed by a list of dependencies specifies
+the modules to load into the executable image;
+followed by the special keyword ``:build`` instead of such a list,
+it specifies that the executable shall have
+the same dependencies as the build.
+Equivalently you could use
+``((:build "/foo"))`` where ``/foo`` is the name of your build.
+You may specify forms to read and evaluate before the image is dumped using
+``:pre-image-dump "(some (string to be read and evaluated))"``
+and forms to read and evaluate before after image is resumed using
+``:post-image-restart "(some (string to be read and evaluated))"``,
+and a function to be run after those forms are evaluated using
+``:entry-point "package:function-name"``
+(the name of which will be read just
+after the ``:pre-image-dump`` forms are evaluated).
+
+The entry-point function, if provided, will be ``apply``'ed
+with ``xcvb-driver:*arguments*`` as a parameter.
+No ``ARGV0`` is available,
+since it is not provided by all implementations,
+but some libraries might be able to extract it for you.
+See for instance the ``command-line-arguments`` library,
+or ``CLON``.
+
+See examples in XCVB itself and the hello world application in
+``xcvb/examples/hello``, that includes something like this::
+
+	(module
+	 (:fullname "/xcvb/hello" ...)
+         ...
+	 (:executable "hello"
+	  :depends-on :build
+          :post-image-restart "(xcvb-hello::main)"))
+
+Note that instead of a list of dependencies,
+this executable depends-on ``:build``, a special keyword
+meaning that this executable's dependencies are the same as
+the dependencies from the build.
+
+The fullname of the dependency is
+``(:executable "/xcvb/hello/hello)``
+but from the command line, you can name it just ``/xcvb/hello/hello``
+as in::
+
+	xcvb simple-build --build /xcvb/hello/hello --lisp-implementation ccl
+
+More here soon (bug me about it).
+
+
+Around-Compile Hook
+-------------------
+
+A module may specify ``:around-compile "hook"``
+where hook is a string that when read and evaluated on the target Lisp system
+in a function context i.e. inside ``(function ...)``
+will be a function of one argument that will be called with a thunk
+that when evaluated calls ``compile-file`` for the appropriate file.
+
+Using this hook, you may achieve such effects as:
+locally renaming packages,
+binding @var{*readtables*} and other syntax-controlling variables,
+handling warnings and other conditions,
+proclaiming consistent optimization settings,
+saving code coverage information,
+maintaining meta-data about compilation timings,
+setting gensym counters and PRNG seeds and other sources of non-determinism,
+overriding the source-location and/or timestamping systems,
+checking that some compile-time side-effects were properly balanced,
+etc.
+
+When ``:around-compile`` hook is specified explicitly as ``nil``,
+no function will be called around the compilation.
+When no ``:around-compile`` hook is specified,
+a hook may be inherited from the parent build.
+
+Typically, you would define the hook function in some file,
+and another file (or an entire build) would ``:depends-on``
+the file defining the hook.
+If the hook-defining file is itself in the same build,
+it could explicitly specify ``:around-compile nil``
+to avoid either an undefined hook or a circular dependency.
+
+See for example how we compile ``ironclad`` with XCVB.
+
+
+Troubleshooting an XCVB build
+=============================
+
+Debugging the built system
+--------------------------
+
+Assuming your system builds, you may want to debug it with SLIME_.
+
+.. _SLIME: http://common-lisp.net/project/slime/
+
+If you build an image, you can load it with::
+
+	C-u M-x slime sbcl --core obj/mybuild.image
+
+If you build an executable, you can have it offer a REPL like XCVB does
+(see the implementation of ``xcvb repl`` in ``xcvb/main.lisp``) and use::
+
+	C-u M-x slime xcvb repl
+
+You can then use ``C-c C-c`` to compile definitions you modify,
+or ``C-c C-k`` to compile whole files.
+When you're satisfied with the changes you've made interactively,
+you should check that it still builds from clean with ``make``,
+and use the REPL interactively once again to double check
+that it still does what you think it does.
+
+
+Debugging the build
+-------------------
+
+When you encounter an issue in the build itself,
+you can try to restart the offending compilation
+with debugging enabled.
+To enable debugging,
+define the shell variable ``XCVB_DEBUGGING`` as some non-empty string
+and export it.
+
+The standard way to do that would be to build your software with::
+
+	make -j -f xcvb.mk || XCVB_DEBUGGING=t make -f xcvb.mk
+
+This will automatically invoke a debugging build of the first failing component
+when an error is found, otherwise happily compiling your system in parallel.
+
+What the ``XCVB_DEBUGGING`` variable does is cause the
+the ``xcvb-driver:debugging`` primitive to be called.
+If you want to do in-depth debugging as you initially port things to XCVB,
+you can also call this function in your Lisp setup.
+
+
+Profiling the build
+-------------------
+
+If you want to understand where exactly the build is spending its time,
+you can define the shell variable ``XCVB_PROFILING`` as a non-empty string
+and export it.
+
+This will cause the XCVB driver to output lines of timing information
+that you can thereafter read and analyze.
+
+
+XCVB and ASDF
+=============
+
+XCVB builds depending on ASDF systems
+-------------------------------------
+
+You may in some ``(module ...)`` declaration
+include a dependency on ``(:asdf "foo")``.
+XCVB will ensure that the proper ASDF system
+is loaded with ``(asdf:load-system "foo")``
+in any target that depends on such.
+
+XCVB shares its source-registry mechanism with ASDF 2.
+If you properly configure your `Source Registry`_ for XCVB,
+it will also work with ASDF.
+
+If you insist on using ASDF 1 or its legacy ``*central-registry*`` mechanism,
+you will probably need a setup file (as per `Lisp Setup`_) to configure it.
+
+
+
+ASDF systems depending on XCVB builds
+-------------------------------------
+
+An ASDF can depend on an XCVB build
+by wrapping said build with a trivial ``.asd`` file::
+
+   (defsystem :foo
+     :defsystem-depends-on (:xcvb-bridge)
+     :class :xcvb-build)
+
+By default, the ASDF system name with be downcased and a ``/``  prepended
+to deduce the XCVB fullname for the corresponding build.
+You may override this default with the ``:build`` keyword::
+
+   (defsystem :foo-bar
+     :defsystem-depends-on (:xcvb-bridge)
+     :class :xcvb-build
+     :build "/foo/bar")
+
+Of course, XCVB must be present on the system
+and support your Lisp implementation
+for such a construction to work.
+
+Alternatively, you can easily extract an ASDF system from one or more XCVB builds,
+and use that as a system that other ASDF systems may depend upon.
+(See `Converting XCVB builds into ASDF systems`_ below.)
+Or you can use a manually maintained ``.asd`` file that covers
+the same software as an XCVB build.
+
+Now, there may at this point be "interesting" situations
+where some software is loaded both as an ASDF system and an XCVB build.
+Say, some XCVB build A depends on an ASDF system B
+that depends on an ASDF system C, while some other XCVB build D
+depends on same software C but as an XCVB build.
+In such case, the XCVB build will redundantly compile and load
+the same software a second time after it has been loaded by ASDF.
+Apart from the slight performance penalty, things should be alright.
+But if your ASDF central registry and your XCVB search path
+are configured to compile slightly different and incompatible versions,
+you may experience bugs. You need to ensure there is no conflict there.
+Finally, if some kind of deep conflict bites you because somehow
+ASDF and XCVB compile your software incompatible, it won't be loaded twice,
+the best solution will be to fix your software,
+and possibly convert all the relevant dependencies to use XCVB
+(in the above notional example, convert B to XCVB).
+
+As a kluge, if you really don't want to convert such system to XCVB,
+you may hack your XCVB ``build.xcvb`` specifications
+to specify dependencies on such software as ``(:asdf "foo")``
+instead of ``(:build "foo")`` or ``"foo"`` or ``"/foo"``,
+and/or plainly comment them out if said dependencies are loaded as part of your ``setup.lisp``.
+If you specify ``(:asdf "foo")``,
+you may want to take any ``build.xcvb`` that ``:supersedes-asdf ("foo")``
+out of your ``CL_SOURCE_REGISTRY``, and/or create a conflict for it,
+and/or comment out said ``:supersedes-asdf`` declaration.
+
+Contact the authors of XCVB if any help is required.
+
+
+Converting XCVB builds into ASDF systems
+----------------------------------------
+
+It is possible to automatically convert one or more XCVB builds into an ASDF system.
+
+This can be used to allow ASDF-based toolchains to depend
+on software packaged with XCVB
+(see above `ASDF systems depending on XCVB builds`_).
+
+This can also allow XCVB-enabled software to be built faster
+(because without dependency enforcement) with ASDF or POIU,
+all the while being able to enforce and check dependencies as part of development.
+However see below `Fast non-enforcing builds using POIU`_
+for how such use has been integrated in XCVB.
+
+The conversion is automatic, but "flattens" features
+that are not supported by ASDF without an extension:
+
+  * Generated files will be not be marked specially on the ASDF side;
+    it is assumed that by the time the dependencies have been compiled and loaded,
+    the generated files will be there.
+    Recent versions of ASDF should be satisfied with that.
+
+  * Conditional dependencies are expanded according to the implementation specified for XCVB.
+    As a limitation of our automated conversion process, we don't try to convert conditionals
+    such as ``(:when (:featurep :sbcl) ...)`` into the idiom ``#+sbcl ...``
+    (because the general case is not completely trivial and would require us
+    to rewrite our own pretty printer).
+
+  * Require dependencies must somehow be provided
+    (e.g. by having the ``.asd`` file or some Lisp file call ``(cl:require ...)``
+    with the desired feature before the feature is used;
+    possibly in an ``EVAL-WHEN`` at the beginning of the file where the feature is used.)
+
+If you are using a simple build that does not using any such extensions to ASDF,
+then the produced ASDF file will be a faithful representation of the XCVB build.
+If you use any such extension, then the produced ASDF file will be but an extract
+that will allow you to compile your software with the specified implementation,
+but will not constitute a general ASDF file unless you edit it by hand
+to make proper use of ASDF extensions.
+
+To convert, use a command such as::
+
+	xcvb xcvb-to-asdf \
+        	--build /fullname/of/some/build
+                --build /fullname/of/some/other/optional/build
+                --name desired-name-of-asdf
+                --output-path /element/of/an/output/path.asd
+
+See ``xcvb help xcvb-to-asdf`` for more options for this command.
+
+
+Converting ASDF systems into XCVB builds
+----------------------------------------
+
+In simple cases, you may convert a system from ASDF to XCVB with a command such as::
+
+	xcvb asdf-to-xcvb \
+                --setup /path/to/lisp/file/to/setup/asdf/if/not/builtin/to/your/lisp \
+		--system-path /path/to/your/asdf/systems/ \
+		--system-path /path/to/more/asdf/systems/ \
+                --preload some-system-to-preload-and-not-instrument \
+                --preload another-system-to-preload-and-not-instrument \
+                --preload yet-another-system-to-preload-and-not-instrument \
+                --system main-system \
+                --system another-system-to-merge-with-it \
+                --system yet-another-system-to-merge-with-it
+
+
+In cases where the above fails, common pitfalls include the following:
+
+  * If your system has conditional dependencies (as in ``#+sbcl ...``) then
+    you'll have to manually add such dependencies
+    to the ``:depends-on`` of the proper XCVB module,
+    or possibly as part of your ``:build-depends-on``.
+
+  * If your system has some generated files, then you'll have to add the
+    proper entries manually in your ``build.xcvb``.
+    On the other hand, you won't have to reimplement in XCVB
+    the kludges that were necessary to have that work under ASDF (kind of),
+    for XCVB has built-in and correctly working support for such generated files.
+
+  * If some of your files have data dependencies,
+    the converter may get confused by any ASDF extension used for this purpose,
+    and you may have to either convert manually, or strip down your ``.asd`` file
+    into something that ASDF-DEPENDENCY-GROVEL may understand,
+    then add data dependencies by hand.
+    To conditionally modify your ``.asd`` file, you may use ``#+asdf-dependency-grovel``
+    or otherwise do conditional compilation based on some symbol that you ``push`` into
+    ``*features*`` in your setup file.
+
+  * If your system requires some other ASDF extension,
+    this isn't yet supported by XCVB, and you will have to manually convert any such thing.
+    Please also contact the authors of XCVB.
+
+  * If your files define compile-time datastructures, you may have to
+    either extend ``asdf-dependency-grovel`` to support your defining primitives
+    (see the ``handlers/`` directory of ASDF-DEPENDENCY-GROVEL),
+    or to manually use ADG's ``signal-provider`` and ``signal-user`` functions
+    to manually declare otherwise undetected dependencies.
+
+  * If your system includes magic build-time side-effects inside the ``.asd`` file itself,
+    then you'll have to provide any such effects in a different way with XCVB.
+    For instance, you may include any required ``(pushnew ... *features*)`` in an ``eval-when``
+    near the top of your package definition file,
+    or in a Lisp file at the end of your build,
+    or even in your `Lisp Setup`_ file.
+
+Additionally, figuring out the dependencies between your Lisp modules
+may not suffice to obtain a system that compiles with XCVB.
+You will still have to edit your code so that it follows the
+`Restrictions on your Lisp Code`_, most notably regarding the proper usage of ``eval-when``.
+
+
+ASDF extensions without XCVB equivalent
+---------------------------------------
+
+``ASDF-BINARY-LOCATIONS`` (now part of ASDF as of 1.366)
+redirects the FASLs in a shared per-user cache with discriminations per implementation
+(CL-Launch does something similar).
+XCVB segregates FASLs per project, as you may have different image setup
+(including optimization options, feature set, etc.) for different project,
+and want to ensure 100% determinism and reproducibility
+of the build of each of your critical projects,
+without possible side-effects from unrelated projects.
+
+``ASDF-SYSTEM-CONNECTIONS`` allows you to declare "connection" systems
+that are magically loaded when all of their dependencies are loaded.
+Reported use include automatically loading debugging support for some systems
+when `SLIME`_'s swank is loaded.
+This doesn't have an XCVB equivalent, and
+probably will never have an equivalent inside XCVB,
+although similar functionality can be trivially implemented as a layer that wraps XCVB.
+Indeed, XCVB is wholly based upon the "pure functional" idea
+that a dependency means the same thing
+independently from the other components of the overall system in which it is included.
+``ASDF-SYSTEM-CONNECTIONS`` doesn't save you from having to specify
+a connected system with both dependencies
+just because it calls this system "connection".
+In programs that actually make use of the connection,
+it isn't harder to specify an explicit dependency on the connected system
+than to specify both dependencies,
+and it is much less confusion-prone.
+Making such dependencies explicit also allows to clearly distinguish
+and manipulate the smaller components that are connected and
+the bigger component that includes and connects them.
+With XCVB, you are welcome to define "connections",
+and automatically generate specifications that include "connected" systems,
+but this has to happen in a layer above XCVB
+that XCVB itself doesn't have to care about;
+for instance, in a script that will parse some specification
+and select which modules of your big system will be included in your build,
+and do any kind of rule-based reasoning it wants to automatically include connections.
+This script can then create a ``build.xcvb`` file and instruct XCVB to build it.
+
+
+Undoing a conversion to XCVB
+----------------------------
+
+If for whatever reason, you want to undo the conversion to XCVB, you can use::
+
+	xcvb remove-xcvb --build /mybuild
+
+And it will remove the ``build.xcvb`` file and
+all ``#+xcvb (module ...)`` forms from your Lisp files.
+
+Even if you want to keep using XCVB in the future,
+this can be useful to get a patch of all the non-XCVB modifications you had to do
+(like inserting ``EVAL-WHEN``'s and fixing some evil macros)
+to get the software running, and commit them (or send them upstream) separately.
+Just be sure to keep your XCVB modifications in a backup, branch, committed baseline, etc.,
+if you don't want to have to redo them manually.
+
+
+Fast non-enforcing builds using POIU
+------------------------------------
+
+After our initial experiments with the ``Makefile`` backend of XCVB,
+it appeared that enforcing dependencies in such a naive way
+can lead to build times that is an order of magnitude slower
+than a serial build time with ASDF, even a quad-core machine.
+
+If you have a very large body of Lisp code,
+you can use the non-enforcing backend of XCVB to build it fast
+in parallel with ASDF or POIU::
+
+	xcvb nm --build stage1 --build stage2 --build foo --parallel
+        make -f xcvb-ne.mk
+
+This will create a non-enforcing ``Makefile`` (default name ``xcvb-ne.mk``)
+that plainly creates a series of images for each of the builds,
+culminating with the last one, where for each stage
+the dependencies are compiled with ASDF,
+or with POIU if the ``--parallel`` option is specified.
+
+Note that depending on your machine, your Lisp implementation and your project,
+compilation in parallel with POIU can be either much faster or somewhat slower
+than compilation in series with ASDF.
+The best way to figure it out is to try them both and see what suits you best.
+
+See ``xcvb help non-enforcing-makefile`` for more options for this command.
+
+This backend provides fast compilation for your big projects,
+though you may want to at least keep the slower enforcing compilation running
+as part of your pre-release tests to detect and debug missed dependencies,
+thus keeping the compilation speed of ASDF or POIU,
+while getting the flexibility, safety and maintainability that XCVB brings.
+
+Finally, note that POIU only supports SBCL and CCL at this time.
+If you are using another implementation, you should either use ASDF
+or extend POIU to support your implementation.
+
+
+Frequently Asked Questions
+==========================
+
+Why can't module declarations be moved to a central file?
+---------------------------------------------------------
+
+The reason why there needs be a module in every file is that
+(at least in the current version of XCVB) is that we build using Make,
+which uses change detection at the file resolution (using timestamps),
+to determine whether or not to recompile object files.
+
+The failure scenario is what happens when you modify the dependencies
+of a Lisp file in a way that changes its semantics
+(e.g. a missing macro, special-variable or package declaration, etc.,
+may cause an error in one case, not the other).
+If you want reliable deterministic compilation (the goal of XCVB),
+then you want to recompile any time such dependency modification happens.
+If you put all the dependencies in a central file, then
+whenever the central file is modified because a new file
+was added or its dependencies modified,
+then everything will have to be recompiled.
+Or if you may trust modifications to the central file to not matter,
+and experience subtle failures.
+
+Note that recompiling based on file-contents instead of file timestamp
+would have the same issue. The issue is the resolution of change detection.
+The solution that would allow to reconcile reliable incremental compilation
+with a centralized dependency definition is what in the XCVB TODO_ file
+I called "Exploded File Dependencies": for the sake of detecting changes,
+explode the centralized dependency file into one file per Lisp module,
+with each per-module exploded bit containing all the dependency information
+about that module, and only that information. It's by no means impossible,
+but it's just something painful and non-trivial that hasn't shown anywhere
+near the top of my TODO list yet.
+
+.. _TODO: http://common-lisp.net/project/xcvb/doc/TODO.html
+
+
+How do I prevent clash between incompatible FASLs?
+--------------------------------------------------
+
+The current Make-based backends of XCVB rely on your specifying
+a ``--cache`` argument (defaulting to your ``$XCVB_CACHE``.
+See `Compiling with XCVB`_ above).
+If you make changes to your Lisp implementation and/or to your `Lisp setup`_
+you need to either clear the contents of this directory.
+If you want to alternate between Lisp implementations and/or setups,
+you are responsible for segregating the object files
+from the alternate configurations in alternate object directories,
+or for cleaning the object directories between incompatible builds.
+
+Note that many defaults of XCVB are probably wrong wrt paths.
+Currently, XCVB defaults the output path of ``xcvb.mk`` and ``obj``
+to the path of the target build, which kind of makes sense
+if you are constantly using a one big project,
+but might not make sense for other hackers.
+
+There should probably instead be a per-user default defined
+in the user configuration, and otherwise defaulting to something under
+``~/.cache/common-lisp/`` or ``${XDG_CACHE_HOME}/common-lisp/``
+just like with ``cl-launch`` or ASDF 2.
+
+In the future, Exploded File Dependencies and digest-based change detection
+will enable a content- and intent- addressed cache in which
+clashes cannot happen by construction
+(or rather, you win a free publication at a crypto conference if you hit one).
+
+
+What are CFASLs?
+----------------
+
+If a FASL is Common Lisp's analogue of a C object file,
+then a CFASL is Common Lisp's analogue of a C precompiled header.
+When compiling file ``foo.lisp``, while the FASL ``foo.fasl`` would record
+the load-time side-effects specified in the code,
+that affect the execution environment of the final program,
+the CFASL ``foo.cfasl`` would record the compile-time side-effects
+specified in the code, that affect the compilation environment
+for the compiler.
+If your Lisp implementation is a cross-compiler,
+the CFASL will contain code for the host processor,
+while the FASL contains code for the target processor.
+
+In many simple cases, and barring cross-compilation,
+compile-time side-effects are a subset of load-time side-effects,
+those that matter to the compiler.
+For instance, when compiling a ``defvar`` or a ``defparameter``,
+the FASL would include the computation of the value and
+the binding of the variable, whereas the CFASL would merely record
+that a symbol was interned and declaimed special.
+For a ``defun``, the FASL would similarly contain the compiled code,
+while the CFASL would only contain some ``ftype`` information,
+possibly more if the function is declaimed inlined.
+Sometimes, these two effects may be identical,
+as in a ``defmacro`` or a ``deftype``.
+
+Note that since function definitions and side-effects to variables
+do not usually take place in the compilation environment,
+you need to use the ``:compile-toplevel`` option to ``eval-when``
+when want to specify these effects to indeed take place in the
+compilation environment. This is especially important when you
+are defining functions for use in macros.
+See section `Compile-time side-effects`_ above.
+
+If you want to be able to do interactive compilation and debugging
+in the target run-time environment, you probably want any
+``:compile-toplevel`` side-effect to *also* be a ``:load-toplevel``
+side-effect — and for good measure you should also include
+the ``:execute`` option to ``eval-when``.
+See my blog post on `eval-when`_.
+
+
+Why not just extend ASDF?
+-------------------------
+
+Before we started XCVB, we had already done many experiments with ASDF.
+See POIU, and many customizations used at ITA,
+hooks for which we have integrated into ASDF since.
+With this experience, we confidently believe the following:
+
+ * It is easier and less confusing to provide bridges between ASDF and XCVB
+   than to try to mimic the very different semantics of XCVB with ASDF syntax:
+
+    * The semantics of compiling with XCVB are essentially
+      backwards incompatible with the semantics of compiling with ASDF.
+
+    * We could try to "embrace and extend" the ASDF syntax, but
+      we would still be incompatible, only in very confusing ways.
+      So we might as well get a fresh start.
+
+    * An important semantic difference in the dependency language is
+      that an ASDF system includes as dependencies all the modules included.
+      This makes it very painful to have conditionally-included dependencies.
+      With XCVB, you can have, declare and name modules under a build
+      without the build itself depending on them.
+      Conditional dependencies are a breeze.
+
+    * Another important semantic difference is that ASDF files contain
+      arbitrary code, and that code is run in a single environment
+      that conflates planning time, building time, runtime.
+      XCVB distinguishes those times and executes them in isolated processes,
+      possibly in different Lisp implementations and/or computer architectures.
+      Therefore there's no possible automatic reuse
+      of a general ASDF-targeted ``.asd`` files
+      into an XCVB build with an ``.asd`` syntax.
+
+    * In the other direction,
+      unless we also reimplement all our extensions twice
+      so they work with the regular ASDF as well as with XCVB,
+      any ``.asd`` file that uses them would actually be a lie
+      as it would only run with XCVB.
+
+    * In conclusion, while we could conceivably be compatible with
+      the surface syntax of an ASDF defsystem in the simple cases,
+      this would both entail a significant amount of additional work for us
+      and necessarily break down into distressing incompatibilities
+      in the corner cases of ASDF usage.
+
+ * With the tools to convert ASDF systems to XCVB builds and vice versa,
+   XCVB is already as compatible with ASDF as we can hope it to be.
+   These tools work perfectly in the simple cases that matter.
+   Moreover, it is possible for XCVB builds to depend on ASDF systems, and
+   for ASDF systems to depend on a XCVB build via a trivial xcvb-bridge.
+
+ * Yes, future tighter integration of ASDF and XCVB is conceivable,
+   but as usual is more work and not very high on my priority list,
+   since I'm after what seems to me to be lower-hanging fruits:
+   fork-based compilation, (exploded) dependency caching, etc.
+   See my TODO file.
+
+
+Why is XCVB so much bigger and more complex than ASDF?
+------------------------------------------------------
+
+It isn't really.
+If you care about size of code included in your software's memory,
+you should be comparing ASDF to XCVB-Driver, not to XCVB.
+XCVB-Driver is three times smaller than ASDF,
+and provides more everyday functionality to your software,
+including a portable run-program.
+It is all you need to load in your Lisp image, and
+it provides all you need to do incremental development.
+
+The rest of XCVB does much more than ASDF, and should not be compared to ASDF,
+but to a hypothetical set of ASDF extensions that would do as much.
+XCVB includes conditional dependencies, conversion between XCVB and ASDF,
+a Makefile backend, cross-compilation, eager error checking, warning control,
+an extensive command-line interface (also at the Lisp REPL),
+plus plenty of new features that are still in the works.
+Yet, XCVB (not counting library dependencies) is only twice the size of ASDF
+— and importantly, you don't have to load any of it into your current image.

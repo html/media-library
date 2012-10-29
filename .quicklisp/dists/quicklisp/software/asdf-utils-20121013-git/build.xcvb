@@ -1,0 +1,6 @@
+;;-*- Lisp -*-
+(module
+ (:fullname "asdf-utils"
+  :build-depends-on ("/asdf")
+  :depends-on
+  ("package" "utils")))

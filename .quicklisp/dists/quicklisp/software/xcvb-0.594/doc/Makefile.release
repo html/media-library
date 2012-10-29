@@ -1,0 +1,225 @@
+# See INSTALL for instructions. -*- Makefile -*-
+
+PREFIX ?= /usr/local
+LISP ?= sbcl
+INSTALL_BIN ?= ${PREFIX}/bin
+INSTALL_LISP ?= ${PREFIX}/share/common-lisp
+INSTALL_IMAGE ?= ${PREFIX}/lib/common-lisp/images
+LISP_SOURCE ?= ${INSTALL_LISP}/source
+LISP_SYSTEMS ?= ${INSTALL_LISP}/systems
+
+ifeq (${LISP},sbcl)
+  XSH=$(shell echo SBCL_HOME="$$(sbcl --noinform --no-userinit --no-sysinit --eval '(progn(princ(sb-ext:posix-getenv "SBCL_HOME"))(quit))')")
+else
+  XSH=
+endif
+
+export RELEASE_DIR ?= $(shell pwd)
+export XCVB_DIR := ${RELEASE_DIR}/xcvb
+export XCVB_WORKSPACE ?= ${RELEASE_DIR}/workspace
+export XCVB_CACHE ?= ${XCVB_WORKSPACE}/cache
+export CL_SOURCE_REGISTRY:=${XCVB_DIR}//:${RELEASE_DIR}/dependencies//:${LISP_SOURCE}//
+export PATH:=${INSTALL_BIN}:${PATH}
+
+OPTIONS := PREFIX=${PREFIX} LISP=${LISP} \
+		INSTALL_BIN=${INSTALL_BIN} INSTALL_LISP=${INSTALL_LISP} \
+		INSTALL_IMAGE=${INSTALL_IMAGE} \
+		LISP_SOURCE=${LISP_SOURCE} LISP_SYSTEMS=${LISP_SYSTEMS} \
+		XCVB_CACHE=${XCVB_CACHE} XCVB_WORKSPACE=${XCVB_WORKSPACE} \
+		RELEASE_DIR=${RELEASE_DIR} XCVB_DIR=${XCVB_DIR}
+
+### The dependencies, in case you want them.
+
+# Dependencies that already include XCVB support upstream.
+# They all use GIT (yay) and their "master" branch includes XCVB support.
+# Exception: libfixposix is actually a C library used by iolib,
+# that the farmer depends on. It doesn't support XCVB directly,
+# but it's no Lisp code, so that's OK.
+DEPENDENCIES_SUPPORTING_XCVB := \
+	GIT git://common-lisp.net/projects/asdf/asdf.git ; \
+	GIT git://common-lisp.net/projects/asdf/asdf-encodings.git ; \
+	GIT git://common-lisp.net/projects/asdf/asdf-utils.git ; \
+	GIT git://common-lisp.net/projects/xcvb/asdf-dependency-grovel.git ; \
+	GIT git://common-lisp.net/projects/xcvb/cl-launch.git ; \
+	GIT git://common-lisp.net/projects/qitab/command-line-arguments.git ; \
+	GIT git://common-lisp.net/users/frideau/fare-utils.git ; \
+	GIT git://common-lisp.net/users/frideau/fare-matcher.git ; \
+	GIT git://common-lisp.net/users/frideau/fare-mop.git ; \
+	GIT git://common-lisp.net/users/frideau/fare-memoization.git ; \
+	GIT git://common-lisp.net/projects/qitab/inferior-shell.git ; \
+	GIT git://common-lisp.net/users/frideau/lambda-reader.git ; \
+	GIT git://gitorious.org/libfixposix/libfixposix.git ; \
+	GIT git://github.com/fare/lisp-interface-library.git ; \
+	GIT git://common-lisp.net/projects/qitab/single-threaded-ccl.git ; \
+	GIT git://common-lisp.net/projects/qitab/poiu.git ; \
+	GIT git://common-lisp.net/projects/xcvb/quux-iolib.git
+
+DEPENDENCIES_STILL_USING_ASDF := \
+	: These are used by xcvb-test: ; \
+	DARCS http://dwim.hu/darcs/hu.dwim.asdf/ ; \
+	XDARCS http://dwim.hu/darcs/hu.dwim.stefil/
+
+# Dependencies patched to run with XCVB
+# Their XCVB repo is under git://common-lisp.net/projects/xcvb/FOO
+# The repo listed below is the actual unpatched upstream.
+# In the XCVB repo, the "master" branch is pristine upstream,
+# and the "xcvb" branch has our patches.
+DEPENDENCIES_PATCHED_FOR_XCVB := \
+	XGIT git://common-lisp.net/projects/alexandria/alexandria.git ; \
+	XGIT git://common-lisp.net/projects/cffi/cffi.git ; \
+	XGIT git://github.com/froydnj/binascii.git ; \
+	XGIT git://github.com/froydnj/ironclad.git ; \
+	XGIT git://github.com/froydnj/nibbles.git ; \
+	XGIT git://github.com/edicl/cl-ppcre.git ; \
+	XDARCS http://common-lisp.net/project/closer/repos/closer-mop/ ; \
+	XDARCS http://common-lisp.net/project/editor-hints/darcs/named-readtables/ ; \
+	XDARCS http://common-lisp.net/~loliveira/darcs/trivial-garbage/ ; \
+	XDARCS http://common-lisp.net/~loliveira/darcs/trivial-features/ ; \
+	: These are used by the farmer only: ; \
+	XGIT git://common-lisp.net/projects/bordeaux-threads/bordeaux-threads.git ; \
+	XGIT git://gitorious.org/iolib/iolib.git ; \
+	: This is used by xcvb-test: ; \
+	XDARCS http://common-lisp.net/project/babel/darcs/babel/ ; \
+	: This one is not actually used yet: ; \
+	XCVS rucksack :pserver:anonymous:anonymous@common-lisp.net:/project/rucksack/cvsroot
+
+DEPENDENCIES := \
+	${DEPENDENCIES_SUPPORTING_XCVB} ; \
+	${DEPENDENCIES_STILL_USING_ASDF} ; \
+	${DEPENDENCIES_PATCHED_FOR_XCVB}
+
+# These are NOT dependencies of XCVB, but have been patched to compile with XCVB.
+NON_DEPENDENCIES_PATCHED_FOR_XCVB := \
+	GIT git://common-lisp.net/projects/cl-stomp/cl-stomp.git ; \
+	XGIT git://git.b9.com/md5.git ; \
+	XGIT git://git.b9.com/cl-base64.git ; \
+	XGIT git://git.b9.com/ptester.git ; \
+	XGIT git://git.b9.com/puri.git ; \
+	XGIT git://github.com/gwkkwg/metabang-bind ; \
+	XGIT git://common-lisp.net/projects/trivial-backtrace/trivial-backtrace.git ; \
+	XGIT git://github.com/edicl/chunga.git ; \
+	XGIT git://github.com/edicl/cl-fad.git ; \
+	XGIT git://github.com/edicl/cl-unicode.git ; \
+	XGIT git://github.com/edicl/cl-who.git ; \
+	XGIT git://github.com/edicl/drakma.git ; \
+	XGIT git://github.com/edicl/flexi-streams.git ; \
+	XGIT git://github.com/edicl/hunchentoot.git ; \
+	XCVS cl+ssl :pserver:anonymous:anonymous@common-lisp.net:/project/cl-plus-ssl/cvsroot ; \
+	XCVS trivial-gray-streams :pserver:anonymous:anonymous@common-lisp.net:/project/cl-plus-ssl/cvsroot ; \
+	XSVN usocket svn://common-lisp.net/project/usocket/svn/usocket/trunk ; \
+	XDARCS http://common-lisp.net/project/iterate/darcs/iterate/ ; \
+	XDARCS http://www.common-lisp.net/project/closer/darcs/lw-compat/ ; \
+	XTAR rfc2388 http://common-lisp.net/project/rfc2388/rfc2388_latest.tar.gz ; \
+	XTAR split-sequence http://ftp.linux.org.uk/pub/lisp/experimental/cclan/split-sequence.tar.gz ; \
+	XTAR trivial-ldap http://homepage.mac.com/ignavusinfo/trivial-ldap/trivial-ldap-0.92.tar.gz ; \
+	: more are available but not listed yet ; \
+	: N/A: single-threaded-ccl
+
+install-cl-launch:
+	mkdir -p ${LISP_SOURCE}/cl-launch ${INSTALL_BIN}
+	./dependencies/cl-launch/cl-launch.sh \
+		-l ${LISP} \
+		-I ${LISP_SOURCE}/cl-launch \
+		-B install_path
+	./dependencies/cl-launch/cl-launch.sh \
+		-l ${LISP} \
+		+I \
+		-o ${INSTALL_BIN}/cl-launch \
+		-B install_bin
+
+install: install-cl-launch
+	mkdir -p ${INSTALL_BIN}
+	${MAKE} ${XSH} -f xcvb.mk.${LISP} ${OPTIONS}
+	${MAKE} -C xcvb xcvb ${OPTIONS}
+
+install-source: install-cl-launch
+	set -e ; \
+	mkdir -p ${LISP_SOURCE}/xcvb ${LISP_SYSTEMS} ; \
+	GIT () { x=$$(basename $$1 .git) ; \
+	  rsync -aC --exclude _darcs --exclude .git dependencies/$$x ${LISP_SOURCE}/ ; } ; \
+	DARCS () { x=$$(basename $$1) ; \
+	  rsync -aC --exclude _darcs --exclude _darcs dependencies/$$x ${LISP_SOURCE}/ ; } ; \
+	XGIT () { x=$$(basename $$1 .git) ; \
+	  rsync -aC --exclude _darcs --exclude .git dependencies/$$x ${LISP_SOURCE}/ ; } ; \
+	XDARCS () { XGIT "$$1" ; } ; XCVS () { XGIT "$$1" ; } ; XSVN () { XGIT "$$1" ; } ; \
+	${DEPENDENCIES} ; \
+	cd xcvb && cp -a *.asd *.lisp *.xcvb ${LISP_SOURCE}/xcvb/
+	ln -sf $$(find ${LISP_SOURCE}/ \( -name '*test*' -prune -false \) -o \
+			 -type f -name '*.asd' ! -name '*test*' ) ${LISP_SYSTEMS}/
+
+install-using-asdf: install-source
+	${MAKE} -C xcvb xcvb-using-asdf ${OPTIONS}
+
+checkout:
+	GIT () { url=$$1 ; x=$$(basename $$url .git) ; \
+	  if [ -d $$x ] ; then echo "Already got $$x" ; \
+	  else git clone $$url ; fi } ; \
+	XGIT () { x=$$(basename $$1 .git) ; \
+	  url=git://common-lisp.net/projects/xcvb/$$x.git ; \
+	  if [ -d $$x ] ; then echo "Already got $$x" ; \
+	  else git clone $$url ; ( cd $$x ; git checkout xcvb ) ; fi } ; \
+	DARCS () { x=$$(basename $$1) ; url=$$1 ; \
+	  if [ -d $$x ] ; then echo "Already got $$x" ; \
+	  else darcs get $$url ; fi } ; \
+	XDARCS () { XGIT "$$1" ; } ; XCVS () { XGIT "$$1" ; } ; XSVN () { XGIT "$$1" ; } ; \
+	set -e ; \
+	GIT git://common-lisp.net/projects/xcvb/xcvb.git ; \
+	mkdir -p dependencies ; cd dependencies ; \
+	${DEPENDENCIES}
+
+gc:
+	echo -n "Packing xcvb..." ; cd xcvb ; git gc ; git repack -Ad
+	cd dependencies ; for i in * ; do \
+	  (echo -n "Packing $$i..." ; cd $$i ; git gc ; git repack -Ad) ; done
+
+update:
+	set -e ; echo -n "Updating xcvb..." ; cd xcvb ; git pull --rebase ; \
+	GIT () { (x=$$(basename $$1 .git) ; echo -n "Updating $$x... " ; \
+		cd $$x ; git pull --rebase origin master:master); } ; \
+	XGIT () { (x=$$(basename $$1 .git) ; echo -n "Updating $$x... " ; \
+		cd $$x ; git pull --rebase origin xcvb:xcvb); } ; \
+	DARCS () { (x=$$(basename $$1) ; echo -n "Updating $$x... " ; \
+		cd $$x ; darcs pull -a); } ; \
+	XDARCS () { XGIT "$$1" ; } ; XCVS () { XGIT "$$1" ; } ; XSVN () { XGIT "$$1" ; } ; \
+	cd ../dependencies ; ${DEPENDENCIES}
+
+reset:
+	set -e ; echo -n "Resetting xcvb..." ; cd xcvb ; \
+	git reset --hard ; git checkout master ; \
+	GIT () { (x=$$(basename $$1 .git) ; echo -n "Resetting $$x... " ; \
+		cd $$x ; git reset --hard ; git checkout master ; git clean -fd); } ; \
+	XGIT () { (x=$$(basename $$1 .git) ; echo -n "Resetting $$x... " ; \
+		cd $$x ; git reset --hard ; git checkout xcvb ; git clean -fd); } ; \
+	DARCS () { (x=$$(basename $$1) ; echo -n "Resetting $$x... " ; \
+		cd $$x ; darcs revert -a); } ; \
+	XCVS () { XGIT "$$1" ; } ; XDARCS () { XGIT "$$1" ; } ; XSVN () { XGIT "$$1" ; } ; \
+	cd ../dependencies ; ${DEPENDENCIES}
+
+prepare-release:
+	(read ; read ; cat ) < xcvb/doc/INSTALL.release > INSTALL && \
+	cp -fap xcvb/doc/configure.mk.example xcvb/configure.mk && \
+	cp -fap xcvb/doc/Makefile.release Makefile && \
+	./dependencies/cl-launch/cl-launch.sh \
+		-I ./dependencies/cl-launch \
+		-B install_path && \
+	echo CL_SOURCE_REGISTRY=$$CL_SOURCE_REGISTRY && \
+	xcvb show-source-registry ; \
+	for l in sbcl clisp ccl ; do \
+	    xcvb make-makefile \
+		--build /xcvb \
+		--lisp-implementation $$l \
+		--output-path=${RELEASE_DIR}/xcvb.mk.$$l \
+		--no-master \
+		--cache ${XCVB_CACHE} \
+		--disable-cfasl ; done && \
+	rm -rf build obj xcvb/obj
+
+test: install
+	cd ${XCVB_DIR} && \
+	./test/runme.zsh ${OPTIONS} validate_release_dir_all_lisps
+
+show-dependencies:
+	@echo '${DEPENDENCIES}'
+
+.PHONY: install-cl-launch install install-source install-using-asdf \
+	checkout update gc prepare-release test show-dependencies

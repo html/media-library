@@ -1,0 +1,15 @@
+;-*- Lisp -*-
+#+xcvb
+(module
+ (:fullname "/xcvb/hello"
+  :supersedes-asdf ("xcvb-hello")
+  :build-depends-on ("/xcvb/hello/lib")
+  :depends-on ("main" "help" "version")
+  :build-image t)
+ (:generate
+  ((:lisp "version" :depends-on ("specials")))
+  :depends-on ((:source "doc/TODO.rest" :in "/xcvb") ; we don't really depend on it, do we?
+               (:lisp "generate-version")))
+ (:executable "hello"
+  :depends-on :build
+  :entry-point "xcvb-hello::main"))

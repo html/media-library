@@ -1,0 +1,83 @@
+;;; -*- mode: lisp -*-
+
+(module
+ (:fullname "xcvb"
+  :author ("Francois-Rene Rideau" "Joyce Chen" "Spencer Brody" "Peter Keller")
+  :maintainer "Francois-Rene Rideau"
+  :licence "MIT" ;; MIT-style license. See LICENSE
+  :description "XCVB"
+  :long-description "an eXtensible Component Verifier and Builder for Lisp.
+XCVB provides a scalable system to build large software in Lisp, featuring
+deterministic separate compilation and enforced locally-declared dependencies."
+  :build-depends-on
+  ((:fasl "/xcvb/driver")
+   (:asdf "asdf")
+   (:build "/asdf-encodings")
+   (:build "/cl-launch")
+   (:build "/fare-memoization")
+   (:build "/lisp-interface-library")
+   (:asdf "asdf-dependency-grovel")
+   (:asdf "closer-mop")
+   (:build "command-line-arguments")
+   (:build "fare-utils") ;; utilities and data structures.
+   (:build "fare-matcher") ;; fare-matcher and fare-quasiquote-readtable
+   (:build "fare-mop")
+   (:build "inferior-shell")
+   (:when (:featurep :xcvb-farmer)
+     (:asdf "iolib") ;; I/O event loop
+     (:asdf "quux-iolib")) ;; signalfd support (experimental)
+   (:asdf "babel")
+   (:asdf "ironclad")
+   (:asdf "binascii")
+   ;;(:when (:featurep (:not :clisp)) (:asdf "rucksack"))
+   (:when (:featurep :clozure)
+     "/single-threaded-ccl")
+   (:when (:featurep :sbcl)
+     ;; Used by XCVB
+     (:require :sb-posix)
+     (:require :sb-sprof)
+     ;; make life easy for SLIME
+     (:require :sb-grovel)
+     (:require :sb-cltl2)
+     (:require :sb-introspect)
+     (:require :sb-bsd-sockets)))
+  :depends-on
+  ("bootstrap"
+   "conditions"
+   "digest"
+   "manifest"
+   "grain-implementation"
+   "grain-sets"
+   "virtual-pathnames"
+   "normalize-dependency"
+   "target-lisp-commands"
+   "makefile-backend"
+   "ne-makefile-backend"
+   "blaze-backend"
+   "asdf-converter"
+   "asdf-backend"
+   "list-files"
+   "pathname-mappings"
+   "slave"
+   "run-program-backend"
+   (:when (:featurep :xcvb-farmer)
+     "farmer")
+   "source-registry"
+   "main"
+   "self-upgrade"
+   "version"
+   "cffi-grovel-support")
+  :supersedes-asdf
+  ("xcvb"
+   ("xcvb-driver" "driver")
+   ("xcvb-utils" "xcvb-utils")
+   ("lisp-invocation" "lisp-invocation")
+   ("asdf-condition-control" "asdf-condition-control")
+   ("xcvb-bootstrap" "bootstrap")
+   ("xcvb-bridge" "bridge"))
+  :pre-image t
+  :build-image nil)
+ (:executable "xcvb"
+  :depends-on :build
+  :pre-image-dump "(xcvb::prepare-image :version #.(xd::get-xcvb-version) :directory #.(xd:getenv \"INSTALL_XCVB\"))"
+  :entry-point "xcvb::main"))

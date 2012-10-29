@@ -1,0 +1,8 @@
+;-*- Lisp -*-
+#+xcvb
+(module
+ (:fullname "/xcvb/example-1"
+  :depends-on ("main" "package"))
+ (:executable "example-1"
+  :depends-on ((:build "/xcvb/example-1"))
+  :entry-point "xcvb-example-1::main"))

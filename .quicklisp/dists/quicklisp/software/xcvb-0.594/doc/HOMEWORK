@@ -1,0 +1,52 @@
+Peter's homework.
+* add documentation to run-program/* and friends, document things in general as I learn them...
+* [IN PROGRESS] Keep converting ERROR to USER-ERROR
+* [IN PROGRESS] Robustify ssr: give a nice english sentence about what went wrong and no bt.
+  - missing files in various contexts
+  - incorrect stuff in build.xcvb
+  - use handler-case as appropriate
+* fix list-files [show all files in a build, either recursively or not, pruning unused files or not]
+  - use handler-case for list-files in handle-target
+  - xcvb lf --build \n produces error in command-line library.
+  - Fails to resolve partial dependency dags, maybe make it a warning in this
+    case? [harder than I think to fix]
+* [IN PROGRESS] write up the DSL and extension idea, write mockup code for what it looks like.
+* Clean up the internals file.
+* [DONE] Write a document stating what I, as a user, would want out of XCVB right away. Also,
+how important is it to have timestamp or content based dependency updates?
+* Following the proposed tutorial, construct each type of software package. Then write it in the
+low level dependency assembly language to see if it can be represented.
+* Write a more formal description of the dependency language I thought up and send
+  to Fare before friday night.
+* Send Fare any notes on other build systems and programming languages evaluated:
+  FrTime, FlapJax, OMake, Cabal, SCons, CMake, SEBS, VESTA, Rebar, etc.
+* Compile a document explaining every means that 7 Lisps can natively produce fasls, cfasls,
+  executables, etc ???
+
+Fare's homework:
+1- fix examples
+2- Make XCVB easily compile ASDF projects in serial in REPL and command line.
+3- Explain the issues regarding the system-granular asdf parallelizer
+ and bootstrap of a xcvb using iolib to do that.
+* Fix manifest format:
+ * store primitives in the build-command-for languages.
+ * use some generic mechanism to extract grain/vp/filenames from build commands!
+ * pass not a pathname, but a command in the xcvb-driver language.
+ * optionally pass a list with a digest for each input grain.
+* see TODO.rest
+
+General Homework
+
+1. Add linkkit to SBCL.
+https://bugs.launchpad.net/sbcl/+bug/794713
+
+2. Finish ripping out features that we don't strictly need to implement [0] in tutorial.
+   Fix build.xcvb and asdf files to know what we removed.
+
+3. look at Qi, Shen, other extensions of CL with rule or logic programming
+
+4. write the CFFI example in your dreamed logic programming language
+
+5. Do integrate ECL patches to ASDF
+
+6. Give a look at the ABCL extension to ASDF to produce .jar files.

@@ -1,0 +1,1 @@
+dists/quicklisp/software/closer-mop-20120909-darcs/closer-mop.asd

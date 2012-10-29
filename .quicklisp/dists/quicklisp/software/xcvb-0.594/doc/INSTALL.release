@@ -1,0 +1,75 @@
+.. ; -*- rst -*- (This file is to be included in the toplevel directory of a release tarball)
+
+What is in this directory
+=========================
+
+This directory is a release of XCVB.
+
+The ``xcvb/`` subdirectory contains xcvb itself.
+
+The ``dependencies/`` subdirectory contains
+several other Common Lisp packages that XCVB depends on.
+
+The ``Makefile`` will help you install.
+
+
+Additional Dependencies
+=======================
+
+In addition to the Common Lisp source code included in this release tarball,
+you will need the following software installed on your computer
+to successfully compile and use XCVB.
+
+First, you will need one of the supported CL implementations.
+Currently supported are:
+
+	* sbcl http://sbcl.sourceforge.net/
+        * clisp http://clisp.cons.org/
+        * ccl http://trac.clozure.com/openmcl
+
+SBCL is the one with which we develop and test the software,
+so it tends to work better and we recommend it.
+On a Debian or Ubuntu machine, you may get it with ``apt-get install sbcl``.
+On a Mac with MacPorts, you may get it with ``sudo port install sbcl``. etc.
+
+
+How to install XCVB
+===================
+
+To install XCVB compiled with the default Lisp under ``/usr/local``, just::
+
+	make install
+
+To install XCVB compiled with ``sbcl`` under ``/opt``, instead try::
+
+	make install PREFIX=/opt LISP=sbcl
+
+To install XCVB using ASDF and compiling with clisp, for bootstrap purposes, instead try::
+
+        make install-using-asdf PREFIX=/opt LISP=clisp
+
+Note that using ASDF requires installing all the source. You can also install the source with::
+
+        make install-source PREFIX=/opt
+
+Look inside the ``Makefile`` to see the supported parameters.
+For fine-tuning beyond those parameters,
+you may have to manually edit ``xcvb/configure.mk``.
+
+
+What Next?
+==========
+
+To use XCVB, look at the documentation in ``xcvb/doc/README.rest``
+If you have the python-docutils installed, you can compile it to html with::
+
+	make -C xcvb doc/README.html
+
+Assuming you are in the directory where you extracted the release tarball,
+you can check that XCVB is working with::
+
+	X=$PWD ; export CL_SOURCE_REGISTRY=${X}// ; cd $X/xcvb ; make xcvb
+
+To hack XCVB, get familiar with it, look at the documentation in
+``INTERNALS.rest`` and ``TODO.rest``. A good starting project would be to build
+a test suite for XCVB itself.

@@ -1,0 +1,374 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename fmatch.info
+@settitle Fare-matcher 1.0.0
+@c %**end of header
+
+@copying
+This manual is for Fare-matcher, version 1.0.0.
+
+Copyright @copyright{} 2009 Fran@,{c}ois-Ren@'e Rideau and Robert P. Goldman.
+
+@quotation
+Permission is granted to ...
+@end quotation
+@end copying
+
+@titlepage
+@title Fare-Matcher Manual
+@subtitle ML-Style Matching in Common Lisp
+@author Fran@,{c}ois-Ren@'e Rideau and Robert P. Goldman
+
+@c  The following two commands
+@c  start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+Published by ...
+@end titlepage
+
+@c So the toc is printed at the start.
+@contents
+
+@ifnottex
+@node Top, Matching macros, (dir), (dir)
+@top Fare-Matcher Manual
+
+This manual is for Fare-matcher, version 1.0.0.
+
+
+@end ifnottex
+
+Fare-matcher adds constructs for Lisp2 pattern matching or destructuring.
+
+ Lisp2 style means that instead of writing
+@example
+(destructuring-bind
+  (a b (c d ()) . e)
+  foo
+  (bar a b c d e))
+@end example
+
+You'd write
+@example
+(letm
+  (list* a b (list c d ()) e)
+  foo
+  (bar a b c d e))
+@end example
+
+@menu
+* Matching macros::
+* Pattern language::
+* Examples::
+* Design notes::
+* Function Index::
+@end menu
+
+@node Matching macros, Pattern language, Top, Top
+@comment  node-name,  next,  previous,  up
+@chapter Matching macros
+
+
+Use these macros in your code:
+
+@deffn {Matching macro} ifmatch n m e e
+
+@example
+(ifmatch (cons a b) '(1) (list a b) -> (1 nil)
+@end example
+
+@end deffn
+
+@deffn {Matching macro} match m case-clauses
+
+@example
+(match msg
+  (:ping (reply :pong))
+  ((:add a b) (reply `(result ,(+ a b)))
+  (:quit (reply :bye)))
+@end example
+@end deffn
+
+@deffn {Matching macro} ematch m case-clauses
+
+Like @code{match}, but raises an error if no clause matches.
+
+@end deffn
+
+@deffn {Matching macro} letm pattern form lexical-scoped-body
+
+@example
+(letm (values (accessor* ((like-when msg (keywordp msg)) command))
+              err?) (read-command)
+    (if err?
+        "ouch"
+        (list msg)))
+@end example
+@end deffn
+
+There are others.
+
+@node Pattern language, Examples, Matching macros, Top
+@comment  node-name,  next,  previous,  up
+@chapter Pattern language
+
+Patterns are lisp forms. Symbols in patterns match anything creating a
+binding to what they match, except @code{*} or @code{_} will match
+anything but are not bound. Literals are matched using @code{eq}.
+
+The core pattern matching forms are look like the forms for consing up
+things and match what otherwise they would create: @code{list},
+@code{list*}, @code{values}, @code{cons}, and @code{vector}. Quite
+concise is that for most common lisp implementations you may use
+back-quoted forms.
+
+@example
+(match msg
+  (`(+ ,a ,b) (+ a b))
+  (`(- ,a ,b) (- a b))
+  (`(- ,a)    (- a b)))
+@end example
+
+Two forms @code{slot*}, @code{accessor*} allow you to match CLOS objects
+using the slot-names or the accessors respectively.  For example:
+@example
+(defun window-hieght (window)
+  (letm (slot* (top a) (bottom b)) window
+    (- bottom top)))
+@end example
+Finally a few pattern forms provide for special cases: @code{and}, @code{or}, @code{of-type}, @code{like-when}.
+
+@node Examples, Design notes, Pattern language, Top
+@comment  node-name,  next,  previous,  up
+@chapter Examples
+
+Some samples pulled from a test case:
+
+@example
+ (ifmatch (cons * (cons x y)) '(1 (2 3) 4) (list x y)) ==> ((2 3) (4))
+
+ (ifmatch (like-when (cons x y) (eql x y)) '(2 . 2) x) ==> 2
+
+ (ifmatch (and (cons x y) (when (eql x y))) '(2 . 2) x) ==> 2
+
+ (ifmatch (and (cons a 1) (cons 2 b)) '(2 . 1) (list a b)) ==> (2 1)
+
+ (ifmatch (list a b) '(1 2) (list b a)) ==> (2 1)
+
+ (ifmatch (list* a b c) '(1 2 3 4) (list a b c)) ==> (1 2 (3 4))
+
+ (ifmatch (and x (cons (of-type integer) *)) '(2) x) => (2)
+
+
+ (defun my-length (x)
+    (ematch x
+      ((cons * tail) (1+ (my-length tail)))
+      ('nil 0))
+
+ (my-length '(1 2 3)) ==> 3
+@end example
+
+@node Design notes, Function Index, Examples, Top
+@comment  node-name,  next,  previous,  up
+@chapter Design notes
+
+This is my attempt at a pattern matcher.
+
+@menu
+* Design Goals::
+* To Do List::
+* Notes from the code::
+@end menu
+
+@node Design Goals, To Do List, Design notes, Design notes
+@comment  node-name,  next,  previous,  up
+@section Semantic Design goals:
+@itemize
+ @item ML- or Erlang-like semantics for pattern matching.
+ @item Integration to the lexical environment:
+     Variables in a match pattern are bound lexically around the form's body.
+ @item Unlike destructuring-bind, follow the same Lisp2 paradigm
+   of source-level lists specifying a generic pattern to call and its arguments.
+   This also allows to trivially distinguish between variables and pattern names
+ by a simple syntactic positional criterion.
+@item Extensibility through definition of new generic patterns,
+ either functions or macros, by defining new names
+ or having algebraic designators.
+@item No backtracking or unification,
+ but leaving possibility for such thing as an extension.
+@end itemize
+
+Implementation goals:
+@itemize
+
+@item
+macro-expansion-time transformation of pattern into recognizing code.
+
+@item
+This first version is no frills:
+  no attempt at algorithmic efficiency, optimization or backtracking.
+
+@item
+Optimized for human simplicity.
+
+@item
+Highly-factored using higher-order functions and macros.
+
+@item
+ Underlying control structures are to be abstract enough
+ so that backtracking could be added by replacing them.
+@end itemize
+Implementation choices:
+@itemize
+
+@item
+ the @code{(ifmatch pattern form body...)} macro expands into a
+ @code{(let (,@@vars) (when (funcall ,matcher ,form) ,@@body))}
+ where (pattern-matcher pattern) returns (values matcher vars)
+
+@item
+ matching code uses matcher-passing style - that's good.
+
+@item
+ macro-expansion code uses a direct synthesis technique - that's bad.
+ It means that all bindings for the match are common to all the matching forms,
+ which requires a bit of discipline from writers of LIKE-WHEN clauses
+ so that nothing evil should happen.
+ Instead, we should use a monadic lexical-environment-passing-style
+ that would create bindings as the match progresses.
+
+@item
+not much of any error detection is done,
+ and when there is, error reporting is minimal.
+
+@item
+not any pattern optimization is done by the matching macros (however,
+ since patterns are expanded into lisp code at macro-expansion time,
+ the compiler might still do a few optimizations and produce reasonable code).
+@end itemize
+
+@node To Do List, Notes from the code, Design Goals, Design notes
+@comment  node-name,  next,  previous,  up
+@section To Do list:
+@itemize
+
+@item
+add a special case for (values) at the top level (???)
+
+@item
+add better patterns for matching structures and classes
+
+@item
+add macros for defining simple patterns of patterns,
+  both in matching and in building.
+
+@item
+add lots of error checking
+
+@item
+make for a better propagation of bindings within internal clauses of
+  the pattern matcher (due to like-when). -- binding-passing style(?)
+
+@item
+add non-linearity???
+
+@item
+add backtracking, based on a CPS transform??? Or use Screamer?
+
+@item
+add first-class patterns (?)
+
+@item
+add pattern merging and optimization (!?) or maybe declarations?
+ Factor the matching of identical initial patterns.
+
+@item
+add better documentation about the pattern matcher (???)
+
+@item
+add support for documentation strings in pattern defining forms
+
+@item
+add support for optional, rest and keyword arguments in defining forms
+
+@item
+add reader-macros for very common cases, if needed.
+
+@item
+have the equivalent of compiler-macros so as to define patterns to use
+when the patterns match a known pattern. E.g. when appending something
+ to a list of known length (before or after), the matching procedure is simple.
+
+@item
+convert everything for use with some kind of first-class environments.
+@end itemize
+
+@node Notes from the code,  , To Do List, Design notes
+@comment  node-name,  next,  previous,  up
+@section Notes from the code
+
+Lisp2 style means that instead of writing
+@example
+        (destructuring-bind (a b (c d ()) . e) foo (bar a b c d e))
+@end example
+You'd write
+@example
+        (match1 (list* a b (list c d 'nil) e) foo (bar a b c d e))
+@end example
+This might look heavier, but then, the fact that the head of a pattern
+is a designator for an arbitrary pattern instead of having patterns
+always be lists except for possible "magic" values like @code{&rest} and
+other keywords allows patterns to be clearer, and @emph{extensible}.
+Thus you can trust that any symbol in head position is a pattern name,
+while any symbol in parameter position is a variable name,
+except if it is a special symbol, or if the head is a pattern macro,
+in which case it controls the meaning of the parameters.
+
+The only predefined special symbol is @code{_} that matches everything.
+I used to have @code{T} match anything (top) and @code{NIL} match nothing (bottom),
+but nobody liked it, so instead they are considered (together with keywords)
+as literals that match the constants @code{T} and @code{NIL}.
+Predefined functional patterns are @code{CONS}, @code{LIST}, @code{LIST*}, @code{VECTOR},
+that match corresponding objects with a known arity.
+Predefined macro patterns are @code{QUOTE}, @code{VALUE}, @code{LIKE-WHEN}, @code{AND}, @code{WHEN}, @code{OF-TYPE},
+@code{SLOT*}, @code{ACCESSOR*}, that respectively match a literal constant, the value
+of an expression, a pattern with a guard condition, the conjunction of
+several patterns, just a guard condition, any value of given type,
+any object with slots as specified, and object with accessors as specified.
+In fare-clos, it is also possible to match against an @emph{instance} of a class
+with slots specified by initargs.
+
+@code{IFMATCH} tries to match a pattern with an expression,
+and conditionally executes either the success form
+in a properly extended lexical environment,
+or the failure form in the original lexical environment,
+depending on whether the match succeeded (with freshly bound variables) or not.
+@code{MATCH} (that I won't rename to @code{COND-MATCH}) tries to match a given expression
+with several patterns, and executes the body of the matching clause if found.
+@code{EMATCH} is like @code{MATCH} except that when no match is found,
+it raises an error instead of returning @code{NIL}.
+
+With this paradigm, matching patterns are thus dual from normal forms.
+I like to think of all forms as patterns, with some patterns being
+in "deconstruction position" (left-hand side of a match clause),
+and other patterns being in "construction position" (right-hand side
+of a match clause).
+Although the current implementation follows Erlang (or ML-like) semantics
+for matching, this paradigm can generalize to non-deterministic settings,
+where you'd obtain something much like Mercury, unifying functional
+and logic programming -- however, I haven't even attempted to implement
+non-determinism (maybe this could be done using Screamer).
+
+NB: Actually, I had first thought about this pattern-matcher when I was more
+of a Lisp1 fan, and the fact that Lisp2 was much more natural for the pattern
+matcher finished to turn me into a Lisp2 fan.
+
+@node Function Index,  , Design notes, Top
+@unnumbered Function Index
+@c{@printindex cp}
+@printindex fn
+@c{@printindex vr}
+
+@bye

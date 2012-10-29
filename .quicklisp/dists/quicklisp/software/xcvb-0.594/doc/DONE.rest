@@ -1,0 +1,217 @@
+.. ; -*- mode:rst; -*-
+
+=============
+DONE for XCVB
+=============
+
+Items dumped from TODO that were done.
+
+(2012-06-03) Make Quicklisp-friendly tarballs
+---------------------------------------------
+
+Distribution: after discussing with Xach,
+it appears we will best distribute two tarballs:
+one with just naked xcvb, no .git data, but
+a file specifying the version as extracted from git;
+the other, with all dependencies and git history.
+This will allow for both usage patterns:
+people who want a latest release without dependencies (i.e. quicklisp) and
+people who want all the dependencies self-contained (for reproducibility).
+
+
+(2011-11-18) add support for :around-compile to ASDF
+----------------------------------------------------
+
+Requires ASDF 2.018.12 and ASDF-DEPENDENCY-GROVEL 1.104.
+
+
+(2011-11-02) Driver fallback to bootstrapping XCVB with ASDF
+------------------------------------------------------------
+
+If no XCVB binary present,
+(1) produce it into ~/.cache/common-lisp/bin/xcvb by SBCL, CLISP or CCL
+(2) call it!
+
+
+(2011-10-23) Setup a repository for each and every dependency
+-------------------------------------------------------------
+
+We now have a systematic way of representing all dependencies in git repos,
+with an `xcvb` branch when it diverges from upstream,
+and (rebasable?) `please-merge` branch for changes that SHOULD be pushed
+even if XCVB doesn't convince the upstream maintainer.
+
+Also, I made sure we can compile (using asdf) with vanilla upstream packages
+(I tried from the master branch, not Quicklisp).
+
+
+(2011-10-14) Provide replacement for ASDF's run-shell-command
+-------------------------------------------------------------
+
+Moved test to t/driver.lisp in its own package;
+invoke test with each present detected implementations.
+
+Introduced a native-namestring interface.
+
+
+(2011-10-03) Ported ironclad, binascii
+--------------------------------------
+
+XCVB can now bootstrap itself again, and does not depend on ``tthsum`` anymore.
+Implemented the ``:around-compile`` feature to make that possible.
+
+
+(2011-06-09) Convert tests from shell to Lisp
+---------------------------------------------
+
+Finished the conversion of the ``runme.zsh`` script to ``t/sub-xcvb.lisp``.
+
+
+(2011-06-09) XCVB Self-Test [V2]
+--------------------------------
+
+We should maintain a comprehensive test suite for XCVB.
+
+There is now a unit test system in ``t/``, and enhancing it
+would be a good way for a hacker to start
+without knowing much about how XCVB works:
+collect a list of things it does, and exercise them,
+either from inside the current Lisp image,
+or by invoking XCVB as a sub-process.
+As failures are detected and fixed, knowledge will seep in.
+
+An XCVB self-test suite would include:
+
+   + Eventually, test all keywords if not all combinations,
+     but start especially with those with big effects such as --no-master.
+
+   + When building XCVB, create one in a staging area, then
+     try to make from clean using that XCVB, and to make from incremental, too.
+
+   + Building XCVB with each of the supported implementations,
+     and running all the tests with each of them (including this build).
+
+   + Checking that the release-tarball bootstraps properly
+     both using the included xcvb.mk and using ASDF.
+
+   + automated migration of some benchmark ASDF systems
+     (e.g. XCVB's own code and dependencies, copied in a test directory).
+
+   + converting back to ASDF, undoing the migration with ``remove-xcvb``,
+     double checking that converting back and forth is a projection
+     (i.e. idempotent after the first time).
+
+   + a Common Lisp equivalent of GNU hello that is moved outside of the XCVB tree
+     (or kept inside, if it has any use).
+
+   + have a mechanism to run the test-suite on a tarball after it is made
+     but before it is released.
+
+
+(2011-06-08) ECL support [V1]
+-----------------------------
+
+ECL is a very useful implementation to support because it is very different
+from most other implementations and thus extends the niche of XCVB applicability.
+For precisely the same reason, its supports requires notable differences from other Lisps.
+
+To support it, we may need to
+
+  * create a variant or subclass of ``static-traversal``
+    to handle the linking model of ECL instead of the dumping model of other Lisps.
+    Probably duplicate or refine a lot of module ``static-traversal``.
+
+  * add new types of files ``:linker-object`` and ``:linker-archive`` for ``.o`` and ``.a``
+    files respectively. Add support for these in modules ``normalize-dependency``,
+    ``dependencies-interpreter``, ``makefile-backend`` at least.
+
+  * make simple changes in the ``driver``, the ``forker``, etc., and
+    probably less simple changes in the ``farmer`` when it's ready.
+
+As usual, the test suite is your friend.
+
+
+(2011-04-27) Port it to Windows
+-------------------------------
+
+   Have a mostly portable version of XCVB
+   that runs standalone on both Windows and Unix,
+   have a backend that doesn't go through Make,
+   but directly calls run-program.
+   This would only be available targetting all maintained platforms:
+   ccl sbcl clisp ecl abcl cmucl scl allegro lispworks allegromodern xcl.
+   No need to support corman, gcl, genera, mcl.
+
+(2011-04-27) Put default location into per-user cache
+-----------------------------------------------------
+
+   Modify default location so that /example-1/foo.lisp compiles into
+   ``~/.cache/xcvb/common-lisp/sbcl-1.0.43-x86/example-1/foo.fasl``
+
+
+(2011-04-27) Command to show settings
+-------------------------------------
+
+xcvb show-settings shows all the settings used, notably regarding
+target compiler, paths, etc.
+
+
+(2011-03-30) Work around slowness in recursive DIRECTORY
+--------------------------------------------------------
+
+We figured why the call of ``directory`` in ``find-build-files-under``
+is so slow (at least in SBCL): because recursive wildcard globbing is not
+implemented very efficiently, and having to compute truenames for all
+the paths we never need is extremely slow.
+
+We solved that in ASDF by recursing ourselves inside directories,
+and pruning version control subdirectories.
+On SBCL, XCVB now uses the pure-lisp code from ASDF,
+instead of spawning a shell that executes ``find(1)``.
+
+
+(2011-03-29) Maintainable Incremental way out of ASDF
+-----------------------------------------------------
+
+We now provide a way out of ASDF that doesn't require maintenance
+of two files, foo/foo.asd AND foo/build.xcvb.
+
+DONE: the xcvb-bridge. (Debugged 2011-06-07)
+
+
+(2010-11-10) Finer-grain ASDF supersession [V2]
+-----------------------------------------------
+
+Allow XCVB to supersede ``xcvb-driver``
+by redirecting to just ``/xcvb/driver``.
+
+
+(2010-08-08) Configuration Management [V2]
+------------------------------------------
+
+Start by having a command-line interface to add or delete keywords from the target *features*.
+
+
+(2010-06-22) Supersession of asdf systems by require dependencies
+-----------------------------------------------------------------
+
+sb-bsd-sockets, sb-posix, etc., are specially handled,
+from asdf subsystems into require dependencies.
+
+
+(2010-02-19) XCVB configuration [V2]
+------------------------------------
+
+XCVB should be use the unix and windows configuration best practices.
+A configuration file in ``~/.config/common-lisp/source-registry.conf``
+overriding ``/etc/common-lisp/source-registry.conf``
+and itself overridable from the environment and the command-line.
+
+For parsing the configuration file, use a sexp language with keywords,
+and share it with ASDF.
+
+See https://bugs.launchpad.net/asdf/+bug/485918
+
+.. _trivial-configuration-parser: http://www.cliki.net/trivial-configuration-parser
+.. _cl-iniparser: http://github.com/TheDarkTrumpet/cl-iniparser
+
