@@ -1,6 +1,6 @@
 (defpackage #:media-library
   (:use :cl :weblocks
-        :f-underscore :anaphora)
+        :f-underscore :anaphora :weblocks-utils)
   (:import-from :hunchentoot #:header-in
     #:set-cookie #:set-cookie* #:cookie-in
     #:user-agent #:referer)
@@ -18,9 +18,16 @@
     :description "media-library: A new application"
     :init-user-session 'media-library::init-user-session
     :autostart nil                   ;; have to start the app manually
-    :ignore-default-dependencies nil ;; accept the defaults
+    :ignore-default-dependencies t ;; accept the defaults
     :debug t
-    )   
+    :dependencies (list 
+                    (make-instance 'script-dependency :url "/pub/scripts/jquery-1.8.2.js")
+                    (make-instance 'stylesheet-dependency :url "/pub/stylesheets/layout.css")
+                    (make-instance 'stylesheet-dependency :url "/pub/stylesheets/main.css")
+                    (make-instance 'stylesheet-dependency :url "/pub/stylesheets/dialog.css")
+                    (make-instance 'script-dependency :url "/pub/scripts/weblocks-jquery.js")
+                    (make-instance 'script-dependency :url "/pub/scripts/dialog-jquery.js")
+                    (make-instance 'script-dependency :url "/pub/scripts/jquery-seq.js")))   
 
 ;; Top level start & stop scripts
 

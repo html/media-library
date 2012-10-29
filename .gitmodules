@@ -1,0 +1,15 @@
+[submodule ".quicklisp/local-projects/weblocks-jquery"]
+	path = .quicklisp/local-projects/weblocks-jquery
+	url = git://github.com/html/weblocks-jquery.git
+[submodule ".quicklisp/local-projects/jquery-seq"]
+	path = .quicklisp/local-projects/jquery-seq
+	url = git://github.com/html/jquery-seq.git
+[submodule ".quicklisp/local-projects/weblocks-utils"]
+	path = .quicklisp/local-projects/weblocks-utils
+	url = git://github.com/html/weblocks-utils.git
+[submodule ".quicklisp/local-projects/weblocks"]
+	path = .quicklisp/local-projects/weblocks
+	url = git://github.com/html/weblocks.git
+[submodule ".quicklisp/local-projects/jquery-bbq"]
+	path = .quicklisp/local-projects/jquery-bbq
+	url = git://github.com/cowboy/jquery-bbq.git

@@ -1,0 +1,1 @@
+../../.quicklisp/local-projects/jquery-seq/jquery-seq.js
