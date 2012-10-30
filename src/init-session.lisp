@@ -51,14 +51,16 @@ inserted into the page to redraw the dialog."
                                                           (<:script :type "text/javascript"
                                                                     (<:as-is 
                                                                       (ps:ps 
-                                                                        (with-scripts "/pub/scripts/jquery.textareaCounter.plugin.js" 
+                                                                        (unless document.textareachanged
+                                                                          (setf document.textareachanged t)
+                                                                          (with-scripts "/pub/scripts/jquery.textareaCounter.plugin.js" 
                                                                                       (lambda ()
                                                                                         (ps:chain 
                                                                                           (j-query "textarea")
                                                                                           (textarea-count 
                                                                                             (ps:create 
                                                                                               max-character-size 160 
-                                                                                              display-format "#input Characters | #left Characters Left")))))))))))
+                                                                                              display-format "#input Characters | #left Characters Left"))))))))))))
                                             (mp3-preview 
                                               :present-as html
                                               :reader (lambda (item)
@@ -76,7 +78,7 @@ inserted into the page to redraw the dialog."
                                             (file :present-as file-upload 
                                                   :parse-as (file-upload 
                                                               :upload-directory (get-upload-directory)
-                                                              :file-name :unique)
+                                                              :file-name :browser)
                                                   :requiredp t
                                                   :satisfies (lambda (item)
                                                                (or 
