@@ -29,6 +29,11 @@ inserted into the page to redraw the dialog."
     (make-pathname :directory '(:relative "upload"))
     (compute-webapp-public-files-path (weblocks:get-webapp 'media-library))))
 
+(defun get-file-id3-info (file)
+  (with-output-to-string (s)
+    (external-program:run "/bin/sh" (list "script/get-id3-tags-info" file ) :output s)
+    s)) 
+
 (defun admin-page (&rest args)
   (do-page 
     (make-instance 'gridedit :data-class 'composition 
@@ -75,6 +80,11 @@ inserted into the page to redraw the dialog."
     <param name='FlashVars' value='mp3=/pub/upload/~a&amp;showvolume=1' />
 </object>
                   " file))))))))
+                  (mp3-id3-data :present-as html 
+                                :reader (lambda (item)
+                                          (cl-ppcre:regex-replace-all "\\n"
+                                            (get-file-id3-info (composition-file-name item))
+                                            "<br/>")))
                                             (file :present-as file-upload 
                                                   :parse-as (file-upload 
                                                               :upload-directory (get-upload-directory)
