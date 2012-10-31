@@ -1,4 +1,7 @@
 #!/bin/sh
 
-ENCODING=$(id3v2 -R "$1" | chardet | awk '{print $2}')
-id3v2 -R "$1" | grep -v "Filename" | grep -v "ID3v1" | grep -v "unimplemented" | iconv -f "$ENCODING" -t utf8
+ID3=id3v2
+CHARDET=chardet
+ENCODING=$($ID3 -R "$1" | $CHARDET | awk '{print $2}')
+$ID3 -R "$1" | grep -v "Filename" | grep -v "ID3v1" | grep -v "unimplemented" | iconv -f "$ENCODING" -t utf8
+

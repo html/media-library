@@ -34,18 +34,27 @@ inserted into the page to redraw the dialog."
     (external-program:run "/bin/sh" (list "script/get-id3-tags-info" file ) :output s)
     s)) 
 
-#+l(defun rss ()
-  (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
-    (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
-     (:channel (:title "An Origami Gallery")
-      (:link "http://origamigallery.net")
-      (:|atom:link| :href "http://origamigallery.net/feed" :rel "self" :type "application/rss+xml")
-      (:description "A photo gallery.  Of origami models.")
-      (loop for model in (all-models)
-            do (htm (:item (:title (str (fullname model)))
-                     (:link (str (absolute-url model)))
-                     (:guid  (str (absolute-url model)))
-                     (:description (str (clean-remarks (remarks model)))))))))))
+(defun export-rss ()
+  (write-string 
+    (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
+      (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
+       (:channel (:title "Mp3 chaos")
+        (:link "http://contentchaos.com")
+        (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
+        (:description "Content chaos")
+        (loop for model in (weblocks-utils:all-of 'composition)
+              do (htm (:item (:title (str (slot-value model 'file)))
+                       (:link (str (composition-file-url model)))
+                       (:guid  (str (object-id model)))
+                       (:description (str (composition-text model)))))))))
+    weblocks:*weblocks-output-stream*))
+
+(push 
+  (hunchentoot:create-regex-dispatcher 
+    "^/feed\\.rss" 
+    #'export-rss)
+  weblocks::*dispatch-table*)
+
 
 (defun make-library-grid ()
   (make-instance 'library-grid 
@@ -95,9 +104,9 @@ inserted into the page to redraw the dialog."
 <object type='application/x-shockwave-flash' data='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' width='200' height='20'>
     <param name='movie' value='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' />
     <param name='bgcolor' value='#ffffff' />
-    <param name='FlashVars' value='mp3=/pub/upload/~a&amp;showvolume=1' />
+    <param name='FlashVars' value='mp3=~a&amp;showvolume=1' />
 </object>
-                  " file))))))))
+                  " (composition-file-url item)))))))))
                   (mp3-id3-data :present-as html 
                                 :reader (lambda (item)
                                           (cl-ppcre:regex-replace-all "\\n"

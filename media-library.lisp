@@ -1,6 +1,6 @@
 (defpackage #:media-library
   (:use :cl :weblocks
-        :f-underscore :anaphora :weblocks-utils)
+        :f-underscore :anaphora :weblocks-utils :cl-who)
   (:import-from :hunchentoot #:header-in
     #:set-cookie #:set-cookie* #:cookie-in
     #:user-agent #:referer)
