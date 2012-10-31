@@ -1,0 +1,1 @@
+du -sh pub/upload | awk '{print $1}'

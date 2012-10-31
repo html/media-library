@@ -19,5 +19,7 @@
       :components 
       ((:file "init-session")
        (:module models 
-        :components ((:file "composition"))))
+        :components ((:file "composition")))
+       (:module widgets 
+        :components ((:file "library-grid"))))
       :depends-on ("media-library" conf))))

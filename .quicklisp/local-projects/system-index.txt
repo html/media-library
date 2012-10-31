@@ -5,7 +5,6 @@ weblocks/weblocks-test.asd
 weblocks/weblocks-scripts.asd
 weblocks/weblocks-store-test.asd
 weblocks-utils/weblocks-utils.asd
-monkeylib-id3/com.gigamonkeys.id3v2.asd
 weblocks/contrib/jwr/yui/weblocks-yui.asd
 weblocks/contrib/yarek/weblocks-yarek.asd
 weblocks/contrib/s11001001/weblocks-s11.asd
@@ -13,10 +12,8 @@ weblocks/src/store/clsql/weblocks-clsql.asd
 weblocks/examples/simple-blog/simple-blog.asd
 weblocks/src/store/memory/weblocks-memory.asd
 weblocks/scripts/new-app-templates/{APPNAME}.asd
-monkeylib-pathnames/com.gigamonkeys.pathnames.asd
 weblocks/examples/weblocks-demo/weblocks-demo.asd
 weblocks/src/store/elephant/weblocks-elephant.asd
-monkeylib-binary-data/com.gigamonkeys.binary-data.asd
 weblocks/src/store/postmodern/weblocks-postmodern.asd
 weblocks/src/store/prevalence/weblocks-prevalence.asd
 weblocks/examples/weblocks-clsql-demo/weblocks-clsql-demo.asd

@@ -36,7 +36,7 @@ inserted into the page to redraw the dialog."
 
 (defun admin-page (&rest args)
   (do-page 
-    (make-instance 'gridedit :data-class 'composition 
+    (make-instance 'library-grid :data-class 'composition 
                    :item-form-view (defview nil (:type form :inherit-from '(:scaffold composition)
                                                  :enctype "multipart/form-data"
                                                  :use-ajax-p nil)
