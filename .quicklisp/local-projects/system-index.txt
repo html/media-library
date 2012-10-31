@@ -1,5 +1,6 @@
 firephp/firephp.asd
 weblocks/weblocks.asd
+cl-config/cl-config.asd
 firephp/firephp-tests.asd
 weblocks/weblocks-test.asd
 weblocks/weblocks-scripts.asd
@@ -16,6 +17,7 @@ weblocks/examples/weblocks-demo/weblocks-demo.asd
 weblocks/src/store/elephant/weblocks-elephant.asd
 weblocks/src/store/postmodern/weblocks-postmodern.asd
 weblocks/src/store/prevalence/weblocks-prevalence.asd
+weblocks-filtering-widget/weblocks-filtering-widget.asd
 weblocks/examples/weblocks-clsql-demo/weblocks-clsql-demo.asd
 weblocks/examples/weblocks-elephant-demo/weblocks-elephant-demo.asd
 weblocks/contrib/yarek/examples/employer-employee/employer-employee.asd

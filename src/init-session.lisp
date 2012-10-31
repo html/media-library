@@ -34,9 +34,8 @@ inserted into the page to redraw the dialog."
     (external-program:run "/bin/sh" (list "script/get-id3-tags-info" file ) :output s)
     s)) 
 
-(defun admin-page (&rest args)
-  (do-page 
-    (make-instance 'library-grid :data-class 'composition 
+(defun make-library-grid ()
+  (make-instance 'library-grid :data-class 'composition 
                    :item-form-view (defview nil (:type form :inherit-from '(:scaffold composition)
                                                  :enctype "multipart/form-data"
                                                  :use-ajax-p nil)
@@ -83,17 +82,30 @@ inserted into the page to redraw the dialog."
                   (mp3-id3-data :present-as html 
                                 :reader (lambda (item)
                                           (cl-ppcre:regex-replace-all "\\n"
-                                            (get-file-id3-info (composition-file-name item))
-                                            "<br/>")))
-                                            (file :present-as file-upload 
-                                                  :parse-as (file-upload 
-                                                              :upload-directory (get-upload-directory)
-                                                              :file-name :browser)
-                                                  :requiredp t
-                                                  :satisfies (lambda (item)
-                                                               (or 
-                                                                 (string= "mp3" (string-downcase (pathname-type item)))
-                                                                 (values nil "You can only upload mp3 files"))))))))
+                                                                      (get-file-id3-info (composition-file-name item))
+                                                                      "<br/>")))
+                  (file :present-as file-upload 
+                        :parse-as (file-upload 
+                                    :upload-directory (get-upload-directory)
+                                    :file-name :browser)
+                        :requiredp t
+                        :satisfies (lambda (item)
+                                     (or 
+                                       (string= "mp3" (string-downcase (pathname-type item)))
+                                       (values nil "You can only upload mp3 files")))))))
+
+(defun admin-page (&rest args)
+  (let ((grid (make-library-grid)))
+    (do-page 
+      (list (make-instance 
+              'weblocks-filtering-widget:filtering-widget 
+              :dataseq-instance grid
+              :form-fields (list 
+                             (list 
+                               :id :text
+                               :caption "Text"
+                               :accessor #'composition-text)))
+            grid))))
 
 (defun init-user-session (comp)
   (setf (composite-widgets comp)

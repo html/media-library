@@ -16,3 +16,9 @@
 [submodule ".quicklisp/local-projects/firephp"]
 	path = .quicklisp/local-projects/firephp
 	url = git://github.com/html/firephp.git
+[submodule ".quicklisp/local-projects/weblocks-filtering-widget"]
+	path = .quicklisp/local-projects/weblocks-filtering-widget
+	url = git://github.com/html/weblocks-filtering-widget.git
+[submodule ".quicklisp/local-projects/cl-config"]
+	path = .quicklisp/local-projects/cl-config
+	url = git://github.com/html/cl-config.git
