@@ -1,0 +1,10 @@
+#!/bin/sh
+
+CHARDET=chardet
+MP3INFO=mp3info
+COMMAND="`$MP3INFO -p "%a" "$1" 2>/dev/null`"
+
+if [ ! -z "$COMMAND" ]; then
+  ENCODING=$(echo $COMMAND | $CHARDET | awk '{print $2}')
+  echo $COMMAND | iconv -f "$ENCODING" -t utf8
+fi
