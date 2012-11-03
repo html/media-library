@@ -305,7 +305,11 @@ scales down to 'do-modal' instead."
                                      :id :track-title
                                      :caption "Track title"
                                      :accessor #'composition-text )))
-                  grid)))))
+                  grid 
+                  (lambda (&rest args)
+                    (with-yaclml 
+                      (<:h2 "Logs (" (<:a :href "/pub/log.txt" :target "_blank" "open in new tab") ")")
+                      (<:iframe :style "width:100%;height:100px;" :src "/pub/log.txt"))))))))
 
 (defun init-user-session (comp)
   (setf (composite-widgets comp)
