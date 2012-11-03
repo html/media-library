@@ -15,11 +15,6 @@
                 (setf (getf value-copy-3 :field) :artist)
                 (setf (getf value-copy-4 :field) :track-title)
 
-                (firephp:fb 
-                  (compare-single-value value-copy-1 model-instance)
-                  (compare-single-value value-copy-2 model-instance)
-                  (compare-single-value value-copy-3 model-instance)
-                  (compare-single-value value-copy-4 model-instance))
                 (or 
                   (compare-single-value value-copy-1 model-instance)
                   (compare-single-value value-copy-2 model-instance)
