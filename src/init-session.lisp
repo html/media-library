@@ -190,14 +190,15 @@ scales down to 'do-modal' instead."
 
 (defun export-rss ()
   (unless (multiple-value-bind (user password) (hunchentoot:authorization)
-            (or (not (http-auth-user)) 
-                (and 
+            (or (not (http-auth-user))
+                (and
                   (string= (http-auth-user) user)
                   (string= (http-auth-password) password))))
     (hunchentoot:require-authorization))
+  (setf (hunchentoot:header-out :content-type) "text/xml")
   (let ((app-domain  "http://contentchaos.com"))
-    (write-string 
-    (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
+    (write-string
+    (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>")
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
        (:channel (:title "Mp3 chaos")
         (:link (str app-domain))
@@ -206,7 +207,7 @@ scales down to 'do-modal' instead."
         (loop for model in (weblocks-utils:all-of 'composition)
               do (htm (:item (:title (str (slot-value model 'file)))
                        (:link (str (format nil "~A~A" app-domain (composition-file-url model))))
-                       (:guid  (str (object-id model)))
+                       (:guid  (str (format nil "~A~A" app-domain (composition-file-url model))))
                        (:description (str (composition-text model)))))))))
     weblocks:*weblocks-output-stream*)))
 
