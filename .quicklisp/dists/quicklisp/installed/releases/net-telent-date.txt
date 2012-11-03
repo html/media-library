@@ -1,0 +1,1 @@
+dists/quicklisp/software/net-telent-date_0.42/

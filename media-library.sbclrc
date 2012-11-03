@@ -23,6 +23,7 @@
 (asdf:oos 'asdf:load-op 'swank)
 (swank:create-server :dont-close t :port *swank-port*)
 
+(ql:quickload :net-telent-date)
 (asdf:oos 'asdf:load-op 'media-library)
 (media-library:start-media-library :port *port*)
 

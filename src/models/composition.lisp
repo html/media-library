@@ -3,7 +3,8 @@
 (defclass composition ()
   ((id)
    (text :accessor composition-text)
-   (file)))
+   (file)
+   (item-created-at :initform (get-universal-time))))
 
 (defmethod composition-file-name ((obj composition))
   (with-slots (file) obj
@@ -21,3 +22,8 @@
   (with-output-to-string (s)
     (external-program:run "/bin/sh" (list "script/get-id3-track-title" (composition-file-name obj)) :output s)
     s))
+
+(defmethod composition-created-at-rfc-822 ((obj composition))
+  (with-slots (item-created-at) obj
+    (when item-created-at
+      (net.telent.date:universal-time-to-rfc-date item-created-at))))
