@@ -58,3 +58,9 @@
 
 (assert (string= (transform-file-name-for-media-library "Vishnu Ballada No 3 Fa Bimol Синхронная.mp3" 123)
                  "Vishnu-Ballada-No-3-Fa-Bimol-Sinhronnaya-123.mp3"))
+
+(defmacro %current-user ()
+  `(webapp-session-value 'current-user))
+
+(defun current-user-name ()
+  (getf (%current-user) :name))

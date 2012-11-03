@@ -169,6 +169,8 @@ scales down to 'do-modal' instead."
 
 (in-package :media-library)
 
+(log:config :daily "pub/log.txt")
+
 (defmacro with-yaclml (&body body)
   "A wrapper around cl-yaclml with-yaclml-stream macro."
   `(yaclml:with-yaclml-stream *weblocks-output-stream*
@@ -224,68 +226,17 @@ scales down to 'do-modal' instead."
 (defun make-library-grid ()
   (make-instance 'library-grid 
                  :data-class 'composition 
+                 :on-add-item (lambda (grid item)
+                                (eval `(log:info ,(format nil "Added composition id ~A file ~A by user ~A" (weblocks:object-id item) (slot-value item 'file) (current-user-name)))))
+                 :on-delete-items-completed (lambda (grid ids)
+                                    (declare (ignore grid))
+                                    (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
                  :view (defview nil (:type table :inherit-from '(:scaffold composition))
                                 (file-name :present-as text :reader (lambda (item)
                                                                       (slot-value item 'file)))
                                 (artist :present-as text :reader #'composition-artist)
                                 (track-title :present-as text :reader #'composition-track-title))
-                 :item-form-view (defview nil (:type form :inherit-from '(:scaffold composition)
-                                                 :enctype "multipart/form-data"
-                                                 :use-ajax-p nil)
-                                            (text 
-                                              :requiredp t
-                                              :present-as textarea 
-                                              :satisfies (lambda (item)
-                                                           (or 
-                                                             (<= (length item) 160)
-                                                             (values nil "Should be less then 160 characters"))))
-                                            (textarea-initialization 
-                                              :label ""
-                                              :present-as html 
-                                              :reader (lambda (&rest args)
-                                                        (yaclml:with-yaclml-output-to-string 
-                                                          (<:br)
-                                                          (<:script :type "text/javascript"
-                                                                    (<:as-is 
-                                                                      (ps:ps 
-                                                                        (unless document.textareachanged
-                                                                          (setf document.textareachanged t)
-                                                                          (with-scripts "/pub/scripts/jquery.textareaCounter.plugin.js" 
-                                                                                      (lambda ()
-                                                                                        (ps:chain 
-                                                                                          (j-query "textarea")
-                                                                                          (textarea-count 
-                                                                                            (ps:create 
-                                                                                              max-character-size 160 
-                                                                                              display-format "#input Characters | #left Characters Left"))))))))))))
-                                            (mp3-preview 
-                                              :present-as html
-                                              :reader (lambda (item)
-(with-slots (file) item
-  (when file 
-    (yaclml:with-yaclml-output-to-string
-  (<:div :style "float:left;"
-         (<:as-is (format nil "
-<object type='application/x-shockwave-flash' data='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' width='200' height='20'>
-    <param name='movie' value='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' />
-    <param name='bgcolor' value='#ffffff' />
-    <param name='FlashVars' value='mp3=~a&amp;showvolume=1' />
-</object>
-                  " (composition-file-url item)))))))))
-                  (mp3-id3-data :present-as html 
-                                :reader (lambda (item)
-                                          (cl-ppcre:regex-replace-all "\\n"
-                                                                      (get-file-id3-info (composition-file-name item))
-                                                                      "<br/>")))
-                  (file :present-as file-upload 
-                        :parse-as (file-upload 
-                                    :upload-directory (get-upload-directory)
-                                    :file-name :browser-with-cyrillic-transliteration)
-                        :requiredp t
-                        :satisfies (lambda (item)
-                                     (or 
-                                       (string= "mp3" (string-downcase (pathname-type item)))
-                                       (values nil "You can only upload mp3 files")))))))
+                 :item-form-view (library-grid-form-view t)))
 
 (defview login-view (:type form :persistp nil
                               :inherit-from 'default-login-view
@@ -297,14 +248,14 @@ scales down to 'do-modal' instead."
                    :writer (lambda (pwd obj)
                              (setf (slot-value obj 'password)
                                    (hash-password pwd)))))
-(defmacro %current-user ()
-  `(webapp-session-value 'current-user))
 
 (defun login-successfull-p (email password)
   (when (and 
           (string= email "test@spamavert.com")
           (string= password (weblocks:hash-password "test"))) 
-    (setf (%current-user) (list :ok t))))
+    (setf (%current-user) (list :ok t :name "Admin"))
+    (eval `(log:info , (format nil "Logged in as ~A from ip ~A" (current-user-name) (hunchentoot:remote-addr*))))
+    t))
 
 (defun/cc show-login-form (&rest args)
   (do-login (lambda (login-widget object) 
@@ -321,6 +272,12 @@ scales down to 'do-modal' instead."
                   (lambda (&rest args)
                     (render-link 
                       (make-action (lambda (&rest args)
+                                     (eval 
+                                       `(log:info 
+                                          ,(format nil 
+                                                   "Logged out as ~A from ip ~A" 
+                                                   (current-user-name)
+                                                   (hunchentoot::remote-addr*))))
                                      (setf (%current-user) nil)
                                      (init-user-session (root-widget)))) "Logout"
                       :class "logout"))
