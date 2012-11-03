@@ -17,9 +17,10 @@
       :depends-on ("media-library"))
      (:module src 
       :components 
-      ((:file "init-session")
+      ((:file "init-session" :depends-on ("util"))
        (:module models 
         :components ((:file "composition")))
        (:module widgets 
-        :components ((:file "library-grid"))))
+        :components ((:file "library-grid")))
+       (:file "util"))
       :depends-on ("media-library" conf))))

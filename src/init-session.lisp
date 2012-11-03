@@ -121,6 +121,53 @@ scales down to 'do-modal' instead."
         (send-script (ps (remove-dialog))))
       (do-modal title callee :css-class css-class)))
 
+(defun last-composition-id ()
+  (or (car (sort (mapcar #'weblocks:object-id (weblocks-utils:all-of 'media-library::composition)) #'>)) 0))
+
+(defmethod parse-view-field-value ((parser file-upload-parser) value obj
+   (view form-view) (field form-view-field) &rest args)
+  (declare (ignore args))
+  (when (null value)
+    (return-from parse-view-field-value (values t nil)))
+  (when (stringp value)
+    (error "The value of the upload field is incorrect. Please turn on
+    multipart requests and turn off ajax."))
+  (flet ((octet-string->utf-8 (s)
+           "Kludge to fix librfc2388 bug."
+           (hunchentoot::octets-to-string
+             (map 'vector
+                  (lambda (c)
+                    (let ((x (char-int c)))
+                      (assert (and (not (minusp x))
+                                   (< x 256)))
+                      x))
+                  s)))
+         (fix-cyrillic-file-name (s)
+           (babel:octets-to-string 
+             (babel:string-to-octets s :encoding :latin1)
+             :encoding :utf-8)))
+    (firephp:fb (object-id obj))
+    (let* ((temp-path (first value))
+           (browser-name (fix-cyrillic-file-name (octet-string->utf-8 (second value))))
+           (file-name (etypecase (file-upload-parser-file-name parser)
+                        (symbol (ecase (file-upload-parser-file-name parser)
+                                  (:browser browser-name)
+                                  (:unique (concatenate 'string 
+                                                        (hunchentoot::create-random-string)
+                                                        (or (cl-ppcre:scan-to-strings "\\..*$" browser-name) 
+                                                            "")))
+                                  ; XXX there is small possibility for two files with same id if they are created during one moment
+                                  (:browser-with-cyrillic-transliteration 
+                                    (media-library::transform-file-name-for-media-library 
+                                      browser-name 
+                                      (1+ (last-composition-id))))))
+                        (string (file-upload-parser-file-name parser)))))
+      (copy-file temp-path
+        (merge-pathnames file-name
+                         (file-upload-parser-upload-directory parser))
+        :if-exists :supersede)
+      (values t value file-name))))
+
 (in-package :media-library)
 
 (defmacro with-yaclml (&body body)
@@ -219,7 +266,7 @@ scales down to 'do-modal' instead."
                   (file :present-as file-upload 
                         :parse-as (file-upload 
                                     :upload-directory (get-upload-directory)
-                                    :file-name :browser)
+                                    :file-name :browser-with-cyrillic-transliteration)
                         :requiredp t
                         :satisfies (lambda (item)
                                      (or 
@@ -253,25 +300,41 @@ scales down to 'do-modal' instead."
             :view 'login-view))
 
 (defun/cc admin-page (&rest args)
-  (let ((grid (make-library-grid)))
-    (when (show-login-form)
-      (do-page 
-        (list 
-          (lambda (&rest args)
-            (render-link 
-              (make-action (lambda (&rest args)
-                             (setf (%current-user) nil)
-                             (init-user-session (root-widget)))) "Logout"
-              :class "logout"))
-          (make-instance 
-                'weblocks-filtering-widget:filtering-widget 
-                :dataseq-instance grid
-                :form-fields (list 
-                               (list 
-                                 :id :text
-                                 :caption "Text"
-                                 :accessor #'composition-text)))
-              grid)))))
+          (let ((grid (make-library-grid)))
+            (when (show-login-form)
+              (do-page 
+                (list 
+                  (lambda (&rest args)
+                    (render-link 
+                      (make-action (lambda (&rest args)
+                                     (setf (%current-user) nil)
+                                     (init-user-session (root-widget)))) "Logout"
+                      :class "logout"))
+                  (make-instance 
+                    'weblocks-filtering-widget:filtering-widget 
+                    :dataseq-instance grid
+                    :form-fields (list 
+                                   (list 
+                                     :id :any-field
+                                     :caption "Any field"
+                                     :accessor #'composition-text)
+                                   (list 
+                                     :id :text
+                                     :caption "Text"
+                                     :accessor #'composition-text)
+                                   (list 
+                                     :id :file-name
+                                     :caption "File Name"
+                                     :accessor #'composition-text )
+                                   (list 
+                                     :id :artist
+                                     :caption "Artist"
+                                     :accessor #'composition-text )
+                                   (list 
+                                     :id :track-title
+                                     :caption "Track title"
+                                     :accessor #'composition-text )))
+                  grid)))))
 
 (defun init-user-session (comp)
   (setf (composite-widgets comp)
