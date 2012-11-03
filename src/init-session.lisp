@@ -209,7 +209,8 @@ scales down to 'do-modal' instead."
                        (:link (str (format nil "~A~A" app-domain (composition-file-url model))))
                        (:guid  (str (format nil "~A~A" app-domain (composition-file-url model))))
                        (:description (str (composition-text model)))
-                       (:pub-date (str (composition-created-at-rfc-822 model)))))))))
+                       (when (composition-created-at-rfc-822 model)
+                         (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model))))))))))
     weblocks:*weblocks-output-stream*)))
 
 (push 
