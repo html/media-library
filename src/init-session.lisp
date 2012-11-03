@@ -146,7 +146,6 @@ scales down to 'do-modal' instead."
            (babel:octets-to-string 
              (babel:string-to-octets s :encoding :latin1)
              :encoding :utf-8)))
-    (firephp:fb (object-id obj))
     (let* ((temp-path (first value))
            (browser-name (fix-cyrillic-file-name (octet-string->utf-8 (second value))))
            (file-name (etypecase (file-upload-parser-file-name parser)
