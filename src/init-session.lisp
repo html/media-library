@@ -205,12 +205,14 @@ scales down to 'do-modal' instead."
         (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
         (loop for model in (weblocks-utils:all-of 'composition)
-              do (htm (:item (:title (str (slot-value model 'file)))
-                       (:link (str (format nil "~A~A" app-domain (composition-file-url model))))
-                       (:guid  (str (format nil "~A~A" app-domain (composition-file-url model))))
+              do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
+                   (htm (:item (:title (str (slot-value model 'file)))
+                       (:link (str file-url))
+                       (:guid  (str file-url))
                        (:description (str (composition-text model)))
+                       (:enclosure :url file-url :length (with-open-file (in (composition-file-name model)) (file-length in)) :type "audio/mp3")
                        (when (composition-created-at-rfc-822 model)
-                         (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model))))))))))
+                         (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
     weblocks:*weblocks-output-stream*)))
 
 (push 
