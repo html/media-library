@@ -280,7 +280,9 @@ scales down to 'do-modal' instead."
                                                    (hunchentoot::remote-addr*))))
                                      (setf (%current-user) nil)
                                      (init-user-session (root-widget)))) "Logout"
-                      :class "logout"))
+                      :class "logout")
+                    (with-yaclml 
+                      (<:h2 "Compositions")))
                   (make-instance 
                     'weblocks-filtering-widget:filtering-widget 
                     :dataseq-instance grid
