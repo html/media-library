@@ -195,19 +195,20 @@ scales down to 'do-modal' instead."
                   (string= (http-auth-user) user)
                   (string= (http-auth-password) password))))
     (hunchentoot:require-authorization))
-  (write-string 
+  (let ((app-domain  "http://contentchaos.com"))
+    (write-string 
     (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
        (:channel (:title "Mp3 chaos")
-        (:link "http://contentchaos.com")
+        (:link (str app-domain))
         (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
         (loop for model in (weblocks-utils:all-of 'composition)
               do (htm (:item (:title (str (slot-value model 'file)))
-                       (:link (str (composition-file-url model)))
+                       (:link (str (format nil "~A~A" app-domain (composition-file-url model))))
                        (:guid  (str (object-id model)))
                        (:description (str (composition-text model)))))))))
-    weblocks:*weblocks-output-stream*))
+    weblocks:*weblocks-output-stream*)))
 
 (push 
   (hunchentoot:create-regex-dispatcher 
