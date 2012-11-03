@@ -287,3 +287,6 @@ li.text textarea {
   float: right;
 }
 
+.widget a.logout {
+  float: right !important;
+}

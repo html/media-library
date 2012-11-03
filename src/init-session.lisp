@@ -256,7 +256,14 @@ scales down to 'do-modal' instead."
   (let ((grid (make-library-grid)))
     (when (show-login-form)
       (do-page 
-        (list (make-instance 
+        (list 
+          (lambda (&rest args)
+            (render-link 
+              (make-action (lambda (&rest args)
+                             (setf (%current-user) nil)
+                             (init-user-session (root-widget)))) "Logout"
+              :class "logout"))
+          (make-instance 
                 'weblocks-filtering-widget:filtering-widget 
                 :dataseq-instance grid
                 :form-fields (list 
