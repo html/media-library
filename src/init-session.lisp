@@ -1,3 +1,76 @@
+(in-package :weblocks-filtering-widget)
+
+(defun values-descriptions-to-values-map (item model-instance)
+  (let ((value (getf item :value)))
+    (when (and value (listp value))
+      (setf (getf item :value)
+            (if (equal (getf value :field) :any-field)
+              (let ((value-copy-1 (copy-list value))
+                    (value-copy-2 (copy-list value))
+                    (value-copy-3 (copy-list value))
+                    (value-copy-4 (copy-list value)))
+
+                (setf (getf value-copy-1 :field) :text)
+                (setf (getf value-copy-2 :field) :file-name)
+                (setf (getf value-copy-3 :field) :artist)
+                (setf (getf value-copy-4 :field) :track-title)
+
+                (firephp:fb 
+                  (compare-single-value value-copy-1 model-instance)
+                  (compare-single-value value-copy-2 model-instance)
+                  (compare-single-value value-copy-3 model-instance)
+                  (compare-single-value value-copy-4 model-instance))
+                (or 
+                  (compare-single-value value-copy-1 model-instance)
+                  (compare-single-value value-copy-2 model-instance)
+                  (compare-single-value value-copy-3 model-instance)
+                  (compare-single-value value-copy-4 model-instance)))
+              (compare-single-value value model-instance)))))
+  item)
+
+(defmethod render-view-field ((field form-view-field) (view form-view)
+                                                      (widget filtering-form) presentation value obj 
+                                                      &rest args &key validation-errors field-info &allow-other-keys)
+  (declare (special *presentation-dom-id*))
+  (let* ((attributized-slot-name (if field-info
+                                   (attributize-view-field-name field-info)
+                                   (attributize-name (view-field-slot-name field))))
+         (validation-error (assoc field validation-errors))
+         (field-class (concatenate 'string (aif attributized-slot-name it "")
+                                   (when validation-error " item-not-validated")))
+         (*presentation-dom-id* (gen-id)))
+    (with-html
+      (:li :class field-class
+       (:label :class (attributize-presentation
+                        (view-field-presentation field))
+               :style "display:block;float:left;width:100px;"
+               :for *presentation-dom-id*
+               (:span :class "slot-name"
+                (:span :class "extra"
+                 (unless (empty-p (view-field-label field))
+                   (str (view-field-label field)))
+                 (let ((required-indicator nil))
+                   (when (and (form-view-field-required-p field)
+                              required-indicator)
+                     (htm (:em :class "required-slot"
+                           (if (eq t required-indicator)
+                             (str *default-required-indicator*)
+                             (str required-indicator))
+                           (str "&nbsp;"))))))))
+       (:div 
+         :style "float:left;width:350px;"
+         (apply #'render-view-field-value
+              value presentation
+              field view widget obj
+              :field-info field-info
+              args))
+       (when validation-error
+         (htm (:p :class "validation-error"
+               (:em
+                 (:span :class "validation-error-heading" "Error:&nbsp;")
+                 (str (format nil "~A" (cdr validation-error)))))))
+       (:div :style "clear:both")))))
+
 (in-package :weblocks)
 
 (defun update-dialog-on-request ()
@@ -244,11 +317,7 @@ scales down to 'do-modal' instead."
                  :on-delete-items-completed (lambda (grid ids)
                                     (declare (ignore grid))
                                     (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
-                 :view (defview nil (:type table :inherit-from '(:scaffold composition))
-                                (file-name :present-as text :reader (lambda (item)
-                                                                      (slot-value item 'file)))
-                                (artist :present-as text :reader #'composition-artist)
-                                (track-title :present-as text :reader #'composition-track-title))
+                 :view (defview nil (:type table :inherit-from '(:scaffold composition)))
                  :item-form-view (library-grid-form-view t)))
 
 (defview login-view (:type form :persistp nil
@@ -303,7 +372,7 @@ scales down to 'do-modal' instead."
                                    (list 
                                      :id :any-field
                                      :caption "Any field"
-                                     :accessor #'composition-text)
+                                     :accessor #'identity)
                                    (list 
                                      :id :text
                                      :caption "Text"
@@ -311,20 +380,21 @@ scales down to 'do-modal' instead."
                                    (list 
                                      :id :file-name
                                      :caption "File Name"
-                                     :accessor #'composition-text )
+                                     :accessor #'composition-file)
                                    (list 
                                      :id :artist
                                      :caption "Artist"
-                                     :accessor #'composition-text )
+                                     :accessor #'composition-cached-artist)
                                    (list 
                                      :id :track-title
                                      :caption "Track title"
-                                     :accessor #'composition-text )))
+                                     :accessor #'composition-cached-track-title)))
                   grid 
                   (lambda (&rest args)
                     (with-yaclml 
-                      (<:h2 "Logs (" (<:a :href "/pub/log.txt" :target "_blank" "open in new tab") ")")
-                      (<:iframe :style "width:100%;height:100px;" :src "/pub/log.txt"))))))))
+                      (<:div 
+                        (<:h2 "Logs (" (<:a :href "/pub/log.txt" :target "_blank" "open in new tab") ")")
+                        (<:iframe :style "width:100%;height:100px;" :src "/pub/log.txt")))))))))
 
 (defun init-user-session (comp)
   (setf (composite-widgets comp)

@@ -35,6 +35,8 @@
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
                  :use-ajax-p nil)
+            (cached-artist :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
+            (cached-track-title :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
               :requiredp t
               :present-as textarea 
@@ -86,7 +88,9 @@
                                                                         :file-name :browser-with-cyrillic-transliteration)
                                                             :writer (lambda (value item)
                                                                       (when value 
-                                                                        (setf (slot-value item 'file) value)))
+                                                                        (setf (slot-value item 'file) value)
+                                                                        (setf (slot-value item 'cached-artist) (composition-artist item))
+                                                                        (setf (slot-value item 'cached-track-title) (composition-track-title item))))
                                                             :requiredp ,file-field-required-p
                                                             :satisfies (lambda (item)
                                                                          (if item

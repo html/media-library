@@ -3,8 +3,10 @@
 (defclass composition ()
   ((id)
    (text :accessor composition-text)
-   (file)
-   (item-created-at :initform (get-universal-time))))
+   (file :accessor composition-file)
+   (item-created-at :initform (get-universal-time))
+   (cached-artist :initform nil :accessor composition-cached-artist)
+   (cached-track-title :initform nil :accessor composition-cached-track-title)))
 
 (defmethod composition-file-name ((obj composition))
   (with-slots (file) obj
