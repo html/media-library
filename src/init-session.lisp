@@ -185,10 +185,18 @@ scales down to 'do-modal' instead."
 (defun get-file-id3-info (file)
   (with-output-to-string (s)
     (external-program:run "/bin/sh" (list "script/get-id3-tags-info" file ) :output s)
-    s)) 
+    s))
 
-(defun http-auth-user ())
-(defun http-auth-password ())
+(defvar *http-auth-config-file*  "conf/http-auth.conf")
+
+(defun http-auth-user ()
+  (with-open-file (in *http-auth-config-file*)
+    (read-line in)))
+
+(defun http-auth-password ()
+  (with-open-file (in *http-auth-config-file*)
+    (read-line in)
+    (read-line in)))
 
 (defun export-rss ()
   (unless (multiple-value-bind (user password) (hunchentoot:authorization)
