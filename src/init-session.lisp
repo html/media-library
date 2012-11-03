@@ -15,13 +15,118 @@ inserted into the page to redraw the dialog."
                                           (dialog-css-class current-dialog)
                                           (dialog-close current-dialog)))))))))
 
+(defmethod handle-client-request ((app weblocks-webapp))
+  (progn				;save it for splitting this up
+    (when (null *session*)
+      (when (get-request-action-name)
+	(expired-action-handler app))
+      (start-session)
+      (setf (webapp-session-value 'last-request-uri) :none)
+      (when *rewrite-for-session-urls*
+        (redirect (request-uri*))))
+    (when *maintain-last-session*
+      (bordeaux-threads:with-lock-held (*maintain-last-session*)
+	(setf *last-session* *session*)))
+    (let ((*request-hook* (make-instance 'request-hooks))
+          *dirty-widgets*)
+      (when (null (root-widget))
+	(let ((root-widget (make-instance 'widget :name "root")))
+	  (setf (root-widget) root-widget)
+	  (let (finished?)
+	    (unwind-protect
+		 (progn
+                   (handler-bind ((error (lambda (c) 
+                                           (warn "Error initializing user session: ~A" c)
+                                           (when *backtrace-on-session-init-error*
+                                             (format t "~%~A~%" (print-trivial-backtrace c)))
+                                           (signal c))))
+                       (funcall (webapp-init-user-session) root-widget))
+		   (setf finished? t))
+	      (unless finished?
+		(setf (root-widget) nil)
+		(reset-webapp-session))))
+	  (push 'update-dialog-on-request (request-hook :session :post-action)))
+	(when (and *rewrite-for-session-urls*
+                   (cookie-in (session-cookie-name *weblocks-server*)))
+	  (redirect (remove-session-from-uri (request-uri*)))))
+
+      (let ((*weblocks-output-stream* (make-string-output-stream))
+	    (*uri-tokens* (make-instance 'uri-tokens :tokens (tokenize-uri (request-uri*))))
+	    *before-ajax-complete-scripts*
+            *on-ajax-complete-scripts*
+	    *page-dependencies*
+            *current-page-title*
+            *current-page-description*
+            *current-page-keywords*
+            *current-page-headers*
+	    (cl-who::*indent* (weblocks-webapp-html-indent-p app)))
+	(declare (special *weblocks-output-stream*
+                          *dirty-widgets*
+			  *on-ajax-complete-scripts*
+                          *uri-tokens*
+                          *page-dependencies*
+                          *current-page-title*
+                          *current-page-description*
+                          *current-page-keywords*
+                          *current-page-headers*))
+	(when (pure-request-p)
+	  (abort-request-handler (eval-action))) ; FIXME: what about the txn hook?
+
+        (webapp-update-thread-status "Processing action")
+        (timing "action processing (w/ hooks)"
+          (eval-hook :pre-action)
+          (with-dynamic-hooks (:dynamic-action)
+            (eval-action))
+          (eval-hook :post-action))
+
+	(when (and (not (ajax-request-p))
+		   (find *action-string* (get-parameters*)
+			 :key #'car :test #'string-equal))
+	  (redirect (remove-action-from-uri (request-uri*))))
+
+        (timing "rendering (w/ hooks)"
+          (eval-hook :pre-render)
+          (with-dynamic-hooks (:dynamic-render)
+            (if (ajax-request-p)
+              (handle-ajax-request app)
+              (handle-normal-request app)))
+          (eval-hook :post-render))
+
+        (if (member (return-code*) *approved-return-codes*)
+          (progn 
+            (unless (ajax-request-p)
+              (setf (webapp-session-value 'last-request-uri) (all-tokens *uri-tokens*)))
+            (get-output-stream-string *weblocks-output-stream*))
+          (handle-http-error app (return-code*)))))))
+
+(defun/cc do-dialog (title callee &key css-class close)
+  (declare (special *on-ajax-complete-scripts*))
+  "Presents 'callee' to the user in a modal dialog, saves the
+continuation, and returns from the delimited computation. When
+'callee' answers, removes the modal interface and reactives the
+computation. If the modal interface isn't available, automatically
+scales down to 'do-modal' instead."
+  (assert (stringp title))
+  (if (ajax-request-p)
+      (prog2
+	  (when (current-dialog)
+	    (error "Multiple dialogs not allowed."))
+	  (call callee (lambda (new-callee)
+			 (setf (current-dialog) (make-dialog :title title
+							     :widget new-callee
+							     :close close
+							     :css-class css-class))
+                         (send-script (ps* (make-dialog-js title new-callee css-class close)) :before-load)))
+	(setf (current-dialog) nil)
+        (send-script (ps (remove-dialog))))
+      (do-modal title callee :css-class css-class)))
+
 (in-package :media-library)
 
 (defmacro with-yaclml (&body body)
   "A wrapper around cl-yaclml with-yaclml-stream macro."
   `(yaclml:with-yaclml-stream *weblocks-output-stream*
      ,@body))
-
 
 ;; Define callback function to initialize new sessions
 (defun get-upload-directory ()
@@ -54,7 +159,6 @@ inserted into the page to redraw the dialog."
     "^/feed\\.rss" 
     #'export-rss)
   weblocks::*dispatch-table*)
-
 
 (defun make-library-grid ()
   (make-instance 'library-grid 
@@ -122,18 +226,45 @@ inserted into the page to redraw the dialog."
                                        (string= "mp3" (string-downcase (pathname-type item)))
                                        (values nil "You can only upload mp3 files")))))))
 
-(defun admin-page (&rest args)
+(defview login-view (:type form :persistp nil
+                              :inherit-from 'default-login-view
+                              :buttons '((:submit . "Login") :cancel)
+                              :caption "Login"
+                              :focusp t)
+         (password :requiredp t
+                   :present-as (password :max-length 40)
+                   :writer (lambda (pwd obj)
+                             (setf (slot-value obj 'password)
+                                   (hash-password pwd)))))
+(defmacro %current-user ()
+  `(webapp-session-value 'current-user))
+
+(defun login-successfull-p (email password)
+  (when (and 
+          (string= email "test@spamavert.com")
+          (string= password (weblocks:hash-password "test"))) 
+    (setf (%current-user) (list :ok t))))
+
+(defun/cc show-login-form (&rest args)
+  (do-login (lambda (login-widget object) 
+              (login-successfull-p 
+                (slot-value object 'email)
+                (slot-value object 'password)))
+            :view 'login-view))
+
+(defun/cc admin-page (&rest args)
   (let ((grid (make-library-grid)))
-    (do-page 
-      (list (make-instance 
-              'weblocks-filtering-widget:filtering-widget 
-              :dataseq-instance grid
-              :form-fields (list 
-                             (list 
-                               :id :text
-                               :caption "Text"
-                               :accessor #'composition-text)))
-            grid))))
+    (when (show-login-form)
+      (do-page 
+        (list (make-instance 
+                'weblocks-filtering-widget:filtering-widget 
+                :dataseq-instance grid
+                :form-fields (list 
+                               (list 
+                                 :id :text
+                                 :caption "Text"
+                                 :accessor #'composition-text)))
+              grid)))))
 
 (defun init-user-session (comp)
   (setf (composite-widgets comp)
