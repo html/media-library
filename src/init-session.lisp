@@ -185,7 +185,16 @@ scales down to 'do-modal' instead."
     (external-program:run "/bin/sh" (list "script/get-id3-tags-info" file ) :output s)
     s)) 
 
+(defun http-auth-user ())
+(defun http-auth-password ())
+
 (defun export-rss ()
+  (unless (multiple-value-bind (user password) (hunchentoot:authorization)
+            (or (not (http-auth-user)) 
+                (and 
+                  (string= (http-auth-user) user)
+                  (string= (http-auth-password) password))))
+    (hunchentoot:require-authorization))
   (write-string 
     (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>")
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
