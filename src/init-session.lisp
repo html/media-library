@@ -190,8 +190,12 @@ scales down to 'do-modal' instead."
 (defvar *http-auth-config-file*  "conf/http-auth.conf")
 
 (defun http-auth-user ()
-  (with-open-file (in *http-auth-config-file*)
-    (read-line in)))
+  (handler-case 
+    (with-open-file (in *http-auth-config-file*)
+      (let ((user (read-line in))) 
+        (when (> (length user) 0)
+          user)))
+    (end-of-file () nil)))
 
 (defun http-auth-password ()
   (with-open-file (in *http-auth-config-file*)
@@ -202,6 +206,7 @@ scales down to 'do-modal' instead."
   (unless (multiple-value-bind (user password) (hunchentoot:authorization)
             (or (not (http-auth-user))
                 (and
+                  (http-auth-password)
                   (string= (http-auth-user) user)
                   (string= (http-auth-password) password))))
     (hunchentoot:require-authorization))
