@@ -33,3 +33,8 @@
   (with-slots (item-created-at) obj
     (when item-created-at
       (net.telent.date:universal-time-to-rfc-date item-created-at))))
+
+(defun update-all-compositions-cached-data ()
+  (loop for i in (weblocks-utils:all-of 'composition) do
+        (setf (slot-value i 'cached-artist) (composition-artist i))
+        (setf (slot-value i 'cached-track-title) (composition-track-title i))))
