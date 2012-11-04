@@ -64,3 +64,8 @@
 
 (defun current-user-name ()
   (getf (%current-user) :name))
+
+(defmacro capture-weblocks-output (&body body)
+  `(let ((*weblocks-output-stream* (make-string-output-stream)))
+     ,@body 
+     (get-output-stream-string *weblocks-output-stream*)))

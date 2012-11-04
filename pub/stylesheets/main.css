@@ -290,3 +290,7 @@ li.text textarea {
 .widget a.logout {
   float: right !important;
 }
+
+.search-link-to-simple {
+  margin-left: 10px;
+}

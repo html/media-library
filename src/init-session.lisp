@@ -1,71 +1,4 @@
-(in-package :weblocks-filtering-widget)
-
-(defun values-descriptions-to-values-map (item model-instance)
-  (let ((value (getf item :value)))
-    (when (and value (listp value))
-      (setf (getf item :value)
-            (if (equal (getf value :field) :any-field)
-              (let ((value-copy-1 (copy-list value))
-                    (value-copy-2 (copy-list value))
-                    (value-copy-3 (copy-list value))
-                    (value-copy-4 (copy-list value)))
-
-                (setf (getf value-copy-1 :field) :text)
-                (setf (getf value-copy-2 :field) :file-name)
-                (setf (getf value-copy-3 :field) :artist)
-                (setf (getf value-copy-4 :field) :track-title)
-
-                (or 
-                  (compare-single-value value-copy-1 model-instance)
-                  (compare-single-value value-copy-2 model-instance)
-                  (compare-single-value value-copy-3 model-instance)
-                  (compare-single-value value-copy-4 model-instance)))
-              (compare-single-value value model-instance)))))
-  item)
-
-(defmethod render-view-field ((field form-view-field) (view form-view)
-                                                      (widget filtering-form) presentation value obj 
-                                                      &rest args &key validation-errors field-info &allow-other-keys)
-  (declare (special *presentation-dom-id*))
-  (let* ((attributized-slot-name (if field-info
-                                   (attributize-view-field-name field-info)
-                                   (attributize-name (view-field-slot-name field))))
-         (validation-error (assoc field validation-errors))
-         (field-class (concatenate 'string (aif attributized-slot-name it "")
-                                   (when validation-error " item-not-validated")))
-         (*presentation-dom-id* (gen-id)))
-    (with-html
-      (:li :class field-class
-       (:label :class (attributize-presentation
-                        (view-field-presentation field))
-               :style "display:block;float:left;width:100px;"
-               :for *presentation-dom-id*
-               (:span :class "slot-name"
-                (:span :class "extra"
-                 (unless (empty-p (view-field-label field))
-                   (str (view-field-label field)))
-                 (let ((required-indicator nil))
-                   (when (and (form-view-field-required-p field)
-                              required-indicator)
-                     (htm (:em :class "required-slot"
-                           (if (eq t required-indicator)
-                             (str *default-required-indicator*)
-                             (str required-indicator))
-                           (str "&nbsp;"))))))))
-       (:div 
-         :style "float:left;width:350px;"
-         (apply #'render-view-field-value
-              value presentation
-              field view widget obj
-              :field-info field-info
-              args))
-       (when validation-error
-         (htm (:p :class "validation-error"
-               (:em
-                 (:span :class "validation-error-heading" "Error:&nbsp;")
-                 (str (format nil "~A" (cdr validation-error)))))))
-       (:div :style "clear:both")))))
-
+(load "src/weblocks-filtering-widget-updates.lisp")
 (in-package :weblocks)
 
 (defun update-dialog-on-request ()
@@ -305,7 +238,7 @@ scales down to 'do-modal' instead."
   weblocks::*dispatch-table*)
 
 (defun replace-search-values (str)
-  (let ((widget (first (get-widgets-by-type 'weblocks-filtering-widget:filtering-widget))))
+  (let ((widget (first (get-widgets-by-type 'weblocks-filtering-widget::custom-filtering-widget))))
     (when widget 
       (let ((value-to-replace (getf (getf (slot-value widget 'weblocks-filtering-widget::filters) :value) :compare-value)))
         (when (stringp value-to-replace)
@@ -368,7 +301,7 @@ scales down to 'do-modal' instead."
 (defun/cc admin-page (&rest args)
   (let* ((grid (make-library-grid))
          (filtering-widget (make-instance 
-                             'weblocks-filtering-widget:filtering-widget 
+                             'weblocks-filtering-widget::custom-filtering-widget 
                              :dataseq-instance grid
                              :form-fields (list 
                                             (list 
