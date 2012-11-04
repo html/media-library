@@ -4,22 +4,12 @@
   ((simple-form-view :initform t :accessor custom-filtering-widget-simple-form-view-p)))
 
 (defmethod render-filter-form ((widget custom-filtering-widget))
-  (with-slots (filter-form-visible) widget 
-    (when (or filter-form-visible (custom-filtering-widget-simple-form-view-p widget)) 
-      (render-widget (get-filter-form widget)))))
+  (render-widget (get-filter-form widget)))
 
 (defmethod render-widget-body :around ((widget filtering-widget) &rest args)
   (with-slots (filters filter-form-visible add-filter-action) widget 
     (with-html 
-      (cond 
-        ((or filter-form-visible (custom-filtering-widget-simple-form-view-p widget))
-         (render-filter-form widget)) 
-        ((getf filters :value)
-         (htm 
-           (:div :style "overflow:auto;"
-            (:div :style "padding:5px;float:left;"
-             (render-filters widget filters)))))
-        (t (render-link (lambda (&rest args) (setf filter-form-visible t)) "Add filter")))
+      (render-filter-form widget)
       (:div :style "clear:both"))))
 
 (defmacro filtering-form-simple-view (widget)
@@ -78,6 +68,7 @@
          (data (apply #'make-instance (list* 'filtering-data data)))
          (form 
            (progn 
+             (setf (slot-value data 'compare-value) (getf (getf (slot-value widget 'filters) :value) :compare-value))
              (apply #'make-quickform 
                     view
                     (append 
@@ -107,7 +98,6 @@
                                                        :and nil 
                                                        :or nil))
                                      (key (if filter-form-position (intern (cdr filter-form-position) "KEYWORD") :and)))
-                                (firephp:fb filters new-filter new-filter-value)
                                 (if (equal key :top-or)
                                   (progn 
                                     (setf (getf new-filter :or) (list filters))
@@ -118,18 +108,7 @@
                                     (setf (getf new-filter :value) new-filter-value) 
 
                                     (cond 
-                                      ((or (custom-filtering-widget-simple-form-view-p widget) 
-                                           (not (getf filters :value))) (setf filters new-filter))
-                                      (t
-                                       (setf filters 
-                                             (car (map-filters 
-                                                    (lambda (item)
-                                                      (if (string= (string (getf item :id)) (car filter-form-position))
-                                                        (progn
-                                                          (push new-filter (getf item key))
-                                                          item)
-                                                        item))
-                                                    (list filters))))))))))
+                                      (t (setf filters new-filter)))))))
                             (hide-filter-form widget)
                             (mark-dirty widget))
               :on-cancel (lambda (form)
