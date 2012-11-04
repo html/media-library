@@ -304,6 +304,14 @@ scales down to 'do-modal' instead."
     #'export-rss)
   weblocks::*dispatch-table*)
 
+(defun replace-search-values (str)
+  (let ((widget (first (get-widgets-by-type 'weblocks-filtering-widget:filtering-widget))))
+    (when widget 
+      (let ((value-to-replace (getf (getf (slot-value widget 'weblocks-filtering-widget::filters) :value) :compare-value)))
+        (when (stringp value-to-replace)
+          (setf str (cl-ppcre:regex-replace-all (cl-ppcre:quote-meta-chars value-to-replace) str (format nil "<b style=\"background-color:#808080;\">~A</b>" value-to-replace))))))
+    str))
+
 (defun make-library-grid ()
   (make-instance 'library-grid 
                  :data-class 'composition 
@@ -312,7 +320,19 @@ scales down to 'do-modal' instead."
                  :on-delete-items-completed (lambda (grid ids)
                                     (declare (ignore grid))
                                     (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
-                 :view (defview nil (:type table :inherit-from '(:scaffold composition)))
+                 :view (defview nil (:type table :inherit-from '(:scaffold composition))
+                                (text :present-as html 
+                                      :reader (lambda (item)
+                                                (replace-search-values (composition-text item))))
+                                (file :present-as html 
+                                      :reader (lambda (item)
+                                                (replace-search-values (composition-file item))))
+                                (cached-artist :present-as html 
+                                               :reader (lambda (item)
+                                                         (replace-search-values (composition-cached-artist item))))
+                                (cached-track-title :present-as html 
+                                                    :reader (lambda (item)
+                                                              (replace-search-values (composition-cached-track-title item)))))
                  :item-form-view (library-grid-form-view t)))
 
 (defview login-view (:type form :persistp nil
@@ -342,7 +362,31 @@ scales down to 'do-modal' instead."
             :view 'login-view))
 
 (defun/cc admin-page (&rest args)
-          (let ((grid (make-library-grid)))
+  (let* ((grid (make-library-grid))
+         (filtering-widget (make-instance 
+                             'weblocks-filtering-widget:filtering-widget 
+                             :dataseq-instance grid
+                             :form-fields (list 
+                                            (list 
+                                              :id :any-field
+                                              :caption "Any field"
+                                              :accessor #'identity)
+                                            (list 
+                                              :id :text
+                                              :caption "Text"
+                                              :accessor #'composition-text)
+                                            (list 
+                                              :id :file-name
+                                              :caption "File Name"
+                                              :accessor #'composition-file)
+                                            (list 
+                                              :id :artist
+                                              :caption "Artist"
+                                              :accessor #'composition-cached-artist)
+                                            (list 
+                                              :id :track-title
+                                              :caption "Track title"
+                                              :accessor #'composition-cached-track-title)))))
             (when (show-login-form)
               (do-page 
                 (list 
@@ -360,30 +404,7 @@ scales down to 'do-modal' instead."
                       :class "logout")
                     (with-yaclml 
                       (<:h2 "Compositions")))
-                  (make-instance 
-                    'weblocks-filtering-widget:filtering-widget 
-                    :dataseq-instance grid
-                    :form-fields (list 
-                                   (list 
-                                     :id :any-field
-                                     :caption "Any field"
-                                     :accessor #'identity)
-                                   (list 
-                                     :id :text
-                                     :caption "Text"
-                                     :accessor #'composition-text)
-                                   (list 
-                                     :id :file-name
-                                     :caption "File Name"
-                                     :accessor #'composition-file)
-                                   (list 
-                                     :id :artist
-                                     :caption "Artist"
-                                     :accessor #'composition-cached-artist)
-                                   (list 
-                                     :id :track-title
-                                     :caption "Track title"
-                                     :accessor #'composition-cached-track-title)))
+                  filtering-widget
                   grid 
                   (lambda (&rest args)
                     (with-yaclml 
