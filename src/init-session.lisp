@@ -321,16 +321,20 @@ scales down to 'do-modal' instead."
                                     (declare (ignore grid))
                                     (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
                  :view (defview nil (:type table :inherit-from '(:scaffold composition))
-                                (text :present-as html 
+                                (text :present-as text 
+                                      :order-by 'text
                                       :reader (lambda (item)
                                                 (replace-search-values (composition-text item))))
                                 (file :present-as html 
+                                      :order-by 'file
                                       :reader (lambda (item)
                                                 (replace-search-values (composition-file item))))
                                 (cached-artist :present-as html 
+                                               :order-by 'cached-artist
                                                :reader (lambda (item)
                                                          (replace-search-values (composition-cached-artist item))))
                                 (cached-track-title :present-as html 
+                                                    :order-by 'cached-track-title
                                                     :reader (lambda (item)
                                                               (replace-search-values (composition-cached-track-title item)))))
                  :item-form-view (library-grid-form-view t)))
