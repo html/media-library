@@ -35,6 +35,8 @@
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
                  :use-ajax-p nil)
+            (item-updated-at :present-as hidden :writer (lambda (value item)
+                                                          (setf (slot-value item 'item-updated-at) (get-universal-time))))
             (cached-artist :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-track-title :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))

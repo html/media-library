@@ -5,6 +5,7 @@
    (text :accessor composition-text)
    (file :accessor composition-file)
    (item-created-at :initform (get-universal-time))
+   (item-updated-at :initform nil)
    (cached-artist :initform nil :accessor composition-cached-artist)
    (cached-track-title :initform nil :accessor composition-cached-track-title)
    (cached-bit-rate :initform nil :accessor composition-cached-bit-rate)

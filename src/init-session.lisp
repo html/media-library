@@ -269,21 +269,35 @@ scales down to 'do-modal' instead."
                                       :reader (lambda (item)
                                                 (replace-search-values (composition-file item))))
                                 (cached-track-title :present-as html 
+                                                    :label "Track title"
                                                     :order-by 'cached-track-title
                                                     :reader (lambda (item)
                                                               (replace-search-values (composition-cached-track-title item))))
                                 (cached-bit-rate :present-as html 
-                                                    :order-by 'cached-bit-rate
-                                                    :reader (lambda (item)
-                                                              (replace-search-values (composition-cached-bit-rate item))))
+                                                 :label "Bit rate"
+                                                 :order-by 'cached-bit-rate
+                                                 :reader (lambda (item)
+                                                           (replace-search-values (composition-cached-bit-rate item))))
                                 (cached-sound-type :present-as html 
+                                                   :label "Sound type"
                                                    :order-by 'cached-sound-type
                                                    :reader (lambda (item)
                                                              (replace-search-values (composition-cached-sound-type item))))
                                 (cached-artist :present-as html 
+                                               :label "Artist"
                                                :order-by 'cached-artist
                                                :reader (lambda (item)
-                                                         (replace-search-values (composition-cached-artist item)))))
+                                                         (replace-search-values (composition-cached-artist item))))
+                                (created-at :present-as (date :format "%Y-%m-%d %H:%M:%S") 
+                                            :label "Created at"
+                                            :order-by 'item-created-at
+                                            :reader (lambda (item)
+                                                      (slot-value item 'item-created-at)))
+                                (updated-at :present-as (date :format "%Y-%m-%d %H:%M:%S") 
+                                            :label "Updated at"
+                                            :order-by 'item-updated-at
+                                            :reader (lambda (item)
+                                                      (slot-value item 'item-updated-at))))
                  :item-form-view (library-grid-form-view t)))
 
 (defview login-view (:type form :persistp nil
