@@ -321,7 +321,7 @@ scales down to 'do-modal' instead."
                                     (declare (ignore grid))
                                     (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
                  :view (defview nil (:type table :inherit-from '(:scaffold composition))
-                                (text :present-as text 
+                                (text :present-as html 
                                       :order-by 'text
                                       :reader (lambda (item)
                                                 (replace-search-values (composition-text item))))
