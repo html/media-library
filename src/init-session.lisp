@@ -242,7 +242,9 @@ scales down to 'do-modal' instead."
     (when widget 
       (let ((value-to-replace (getf (getf (slot-value widget 'weblocks-filtering-widget::filters) :value) :compare-value)))
         (when (stringp value-to-replace)
-          (setf str (cl-ppcre:regex-replace-all (cl-ppcre:quote-meta-chars value-to-replace) str (format nil "<b style=\"background-color:#808080;\">~A</b>" value-to-replace))))))
+          (setf str (cl-ppcre:regex-replace-all (cl-ppcre:create-scanner 
+                                                  (format nil "(~A)" (cl-ppcre:quote-meta-chars value-to-replace))
+                                                  :case-insensitive-mode t) str "<b style=\"background-color:#808080;\">\\1</b>")))))
     str))
 
 (defun make-library-grid ()
