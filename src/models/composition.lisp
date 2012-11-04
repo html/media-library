@@ -46,5 +46,5 @@
   (loop for i in (weblocks-utils:all-of 'composition) do
         (setf (slot-value i 'cached-artist) (composition-artist i))
         (setf (slot-value i 'cached-track-title) (composition-track-title i))
-        (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
-        (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
+        (setf (slot-value i 'cached-bit-rate) (composition-bit-rate i))
+        (setf (slot-value i 'cached-sound-type) (composition-sound-type i))))
