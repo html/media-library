@@ -255,7 +255,11 @@ scales down to 'do-modal' instead."
                  :on-delete-items-completed (lambda (grid ids)
                                     (declare (ignore grid))
                                     (eval `(log:info ,(format nil "Deleted compositions ~A by user ~A" ids (current-user-name)))))
-                 :view (defview nil (:type table :inherit-from '(:scaffold composition))
+                 :view (defview nil (:type table)
+                                (id :present-as html 
+                                    :order-by 'id
+                                    :reader (lambda (item)
+                                              (format nil "#~A" (weblocks:object-id item))))
                                 (text :present-as html 
                                       :order-by 'text
                                       :reader (lambda (item)
@@ -264,14 +268,22 @@ scales down to 'do-modal' instead."
                                       :order-by 'file
                                       :reader (lambda (item)
                                                 (replace-search-values (composition-file item))))
-                                (cached-artist :present-as html 
-                                               :order-by 'cached-artist
-                                               :reader (lambda (item)
-                                                         (replace-search-values (composition-cached-artist item))))
                                 (cached-track-title :present-as html 
                                                     :order-by 'cached-track-title
                                                     :reader (lambda (item)
-                                                              (replace-search-values (composition-cached-track-title item)))))
+                                                              (replace-search-values (composition-cached-track-title item))))
+                                (cached-bit-rate :present-as html 
+                                                    :order-by 'cached-bit-rate
+                                                    :reader (lambda (item)
+                                                              (replace-search-values (composition-cached-bit-rate item))))
+                                (cached-sound-type :present-as html 
+                                                   :order-by 'cached-sound-type
+                                                   :reader (lambda (item)
+                                                             (replace-search-values (composition-cached-sound-type item))))
+                                (cached-artist :present-as html 
+                                               :order-by 'cached-artist
+                                               :reader (lambda (item)
+                                                         (replace-search-values (composition-cached-artist item)))))
                  :item-form-view (library-grid-form-view t)))
 
 (defview login-view (:type form :persistp nil

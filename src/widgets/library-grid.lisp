@@ -37,6 +37,8 @@
                  :use-ajax-p nil)
             (cached-artist :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-track-title :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
+            (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
+            (cached-bit-rate :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
               :requiredp t
               :present-as textarea 
@@ -90,7 +92,9 @@
                                                                       (when value 
                                                                         (setf (slot-value item 'file) value)
                                                                         (setf (slot-value item 'cached-artist) (composition-artist item))
-                                                                        (setf (slot-value item 'cached-track-title) (composition-track-title item))))
+                                                                        (setf (slot-value item 'cached-track-title) (composition-track-title item))
+                                                                        (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
+                                                                        (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
                                                             :requiredp ,file-field-required-p
                                                             :satisfies (lambda (item)
                                                                          (if item
