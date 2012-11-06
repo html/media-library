@@ -356,6 +356,7 @@ scales down to 'do-modal' instead."
               (do-page 
                 (list 
                   (lambda (&rest args)
+                    (render-dependency-in-page-head (make-instance 'stylesheet-dependency :url "/pub/stylesheets/style.css"))
                     (render-link 
                       (make-action (lambda (&rest args)
                                      (eval 
@@ -381,6 +382,9 @@ scales down to 'do-modal' instead."
   (setf (composite-widgets comp)
         (list 
           (lambda (&rest args)
+            (with-html 
+              (:br))
             (render-link 
               #'admin-page
-              "Admin")))))
+              "Admin"
+              :class "btn btn-primary btn-large")))))

@@ -13,9 +13,9 @@
 (defun render-total-items-message (obj)
   "Renders the total items message."
   (with-html
-    (:span :class "total-items"
+    (:span :class "total-items pull-right"
 	   (str (let ((total-items-count (dataseq-data-count obj)))
-		  (format nil "Total of <b>~A ~A</b>, disk size taken ~A"
+		  (format nil "Total of <b>~A ~A</b>, disk size taken <b>~A</b>"
 			  total-items-count
 			  (proper-number-form total-items-count
 					      (humanize-name

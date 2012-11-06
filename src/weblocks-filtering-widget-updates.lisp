@@ -146,13 +146,14 @@
                                    (attributize-view-field-name field-info)
                                    (attributize-name (view-field-slot-name field))))
          (validation-error (assoc field validation-errors))
-         (field-class (concatenate 'string (aif attributized-slot-name it "")
+         (field-class (concatenate 'string "control-group " (aif attributized-slot-name it "")
                                    (when validation-error " item-not-validated")))
          (*presentation-dom-id* (gen-id)))
     (with-html
-      (:li :class field-class
-       (:label :class (attributize-presentation
-                        (view-field-presentation field))
+      (:div :class field-class
+       (:label :class (format nil "control-label ~A"
+                              (attributize-presentation
+                        (view-field-presentation field)))
                :style "display:block;float:left;width:100px;"
                :for *presentation-dom-id*
                (:span :class "slot-name"
