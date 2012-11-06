@@ -22,3 +22,6 @@
 [submodule ".quicklisp/local-projects/cl-config"]
 	path = .quicklisp/local-projects/cl-config
 	url = git://github.com/html/cl-config.git
+[submodule ".quicklisp/local-projects/weblocks-twitter-bootstrap-application"]
+	path = .quicklisp/local-projects/weblocks-twitter-bootstrap-application
+	url = git://github.com/html/weblocks-twitter-bootstrap-application.git
