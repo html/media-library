@@ -21,5 +21,6 @@ weblocks-filtering-widget/weblocks-filtering-widget.asd
 weblocks/examples/weblocks-clsql-demo/weblocks-clsql-demo.asd
 weblocks/examples/weblocks-elephant-demo/weblocks-elephant-demo.asd
 weblocks/contrib/yarek/examples/employer-employee/employer-employee.asd
+weblocks-dataseq-records-count-panel/weblocks-dataseq-records-count-panel.asd
 weblocks/contrib/yarek/examples/weblocks-demo-popover/weblocks-demo-popover.asd
 weblocks-twitter-bootstrap-application/weblocks-twitter-bootstrap-application.asd

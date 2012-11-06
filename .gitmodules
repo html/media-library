@@ -25,3 +25,6 @@
 [submodule ".quicklisp/local-projects/weblocks-twitter-bootstrap-application"]
 	path = .quicklisp/local-projects/weblocks-twitter-bootstrap-application
 	url = git://github.com/html/weblocks-twitter-bootstrap-application.git
+[submodule ".quicklisp/local-projects/weblocks-dataseq-records-count-panel"]
+	path = .quicklisp/local-projects/weblocks-dataseq-records-count-panel
+	url = git://github.com/html/weblocks-dataseq-records-count-panel.git

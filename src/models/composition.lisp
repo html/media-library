@@ -49,3 +49,12 @@
         (setf (slot-value i 'cached-track-title) (composition-track-title i))
         (setf (slot-value i 'cached-bit-rate) (composition-bit-rate i))
         (setf (slot-value i 'cached-sound-type) (composition-sound-type i))))
+
+(defun generate-composition ()
+  (let ((composition (make-instance 'composition)))
+    (setf (composition-text composition) "test text")
+    (setf (composition-file composition) "non-existent-file")
+    composition))
+
+(defun generate-and-save-composition ()
+  (persist-object *default-store* (generate-composition)))

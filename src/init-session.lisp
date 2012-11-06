@@ -328,6 +328,10 @@ scales down to 'do-modal' instead."
 
 (defun/cc admin-page (&rest args)
   (let* ((grid (make-library-grid))
+         (records-count-widget 
+           (make-instance 
+             'weblocks-dataseq-records-count-panel:dataseq-records-count-panel 
+             :dataseq-instance grid))
          (filtering-widget (make-instance 
                              'weblocks-filtering-widget::custom-filtering-widget 
                              :dataseq-instance grid
@@ -371,6 +375,7 @@ scales down to 'do-modal' instead."
                     (with-yaclml 
                       (<:h2 "Compositions")))
                   filtering-widget
+                  records-count-widget
                   grid 
                   (lambda (&rest args)
                     (with-yaclml 

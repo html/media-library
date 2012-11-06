@@ -10,7 +10,16 @@
    :author ""
    :licence ""
    :description "media-library"
-   :depends-on (:weblocks :weblocks-utils :yaclml :external-program :weblocks-filtering-widget :firephp :log4cl :weblocks-twitter-bootstrap-application)
+   :depends-on 
+   (:weblocks 
+    :weblocks-utils 
+    :yaclml 
+    :external-program 
+    :weblocks-filtering-widget 
+    :firephp 
+    :log4cl 
+    :weblocks-twitter-bootstrap-application 
+    :weblocks-dataseq-records-count-panel)
    :components ((:file "media-library")
      (:module conf
       :components ((:file "stores"))
