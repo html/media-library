@@ -50,3 +50,7 @@ span.value {
   right:130px;
   bottom: 15px;
 }
+
+.filtering-form .compare-value input {
+  width: 550px;
+}
