@@ -143,3 +143,37 @@
                      (dataseq-common-ops obj)))
         (apply #'dataseq-render-operations obj args)))))
   (call-next-method))
+
+(defmethod with-table-view-body-row ((view table-view) obj (widget library-grid) &rest args
+				     &key alternp &allow-other-keys)
+  (if (and (dataseq-allow-drilldown-p widget)
+	   (dataseq-on-drilldown widget))
+      (let ((row-action (make-action
+			 (lambda (&rest args)
+			   (declare (ignore args))
+			   (when (dataseq-autoset-drilled-down-item-p widget)
+			     (setf (dataseq-drilled-down-item widget) obj))
+			   (funcall (cdr (dataseq-on-drilldown widget)) widget obj))))
+	    (drilled-down-p (and (dataseq-drilled-down-item widget)
+				 (eql (object-id (dataseq-drilled-down-item widget))
+				      (object-id obj)))))
+	(safe-apply (sequence-view-row-prefix-fn view) view obj args)
+	(with-html
+    (:tr :class (when (or alternp drilled-down-p)
+                  (concatenate 'string
+                               (when alternp "altern")
+                               (when (and alternp drilled-down-p) " ")
+                               (when drilled-down-p "drilled-down")))
+         (apply #'render-table-view-body-row view obj widget :row-action row-action args)
+         (:td :style "white-space:nowrap;"
+           (when (not drilled-down-p)
+             (render-link row-action "<i class=\"icon-edit\"></i>&nbsp;Edit" :class "btn btn-primary")))))
+	(safe-apply (sequence-view-row-suffix-fn view) view obj args))
+      (call-next-method)))
+
+(defmethod with-table-view-header-row ((view table-view) obj widget &rest args)
+  (safe-apply (table-view-header-row-prefix-fn view) view obj args)
+  (with-html
+    (:tr (apply #'render-table-view-header-row view obj widget args)
+     (:th "")))
+  (safe-apply (table-view-header-row-suffix-fn view) view obj args))
