@@ -178,7 +178,7 @@
      (:th "")))
   (safe-apply (table-view-header-row-suffix-fn view) view obj args))
 
-(defmethod render-widget-body ((obj gridedit) &rest args)
+(defmethod render-widget-body :around ((obj gridedit) &rest args)
   (declare (ignore args))
   (dataedit-update-operations obj)
   (call-next-method)
@@ -192,4 +192,4 @@
          (with-javascript 
            (ps:ps 
              (ps:chain (j-query ".modal") (modal))
-             (ps:chain (j-query ".modal-backdrop") (unbind "click") (bind "click" (lambda () (return nil))))))))))))
+             (ps:chain (j-query ".modal-backdrop") (unbind "click") (bind "click" (lambda () nil)))))))))))
