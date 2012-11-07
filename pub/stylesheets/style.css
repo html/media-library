@@ -3,7 +3,8 @@
 }
 
 .text textarea {
-  width: 400px;
+  width: 600px;
+  height: 100px;
 }
 
 span.value {
