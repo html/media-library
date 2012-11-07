@@ -177,3 +177,19 @@
     (:tr (apply #'render-table-view-header-row view obj widget args)
      (:th "")))
   (safe-apply (table-view-header-row-suffix-fn view) view obj args))
+
+(defmethod render-widget-body ((obj gridedit) &rest args)
+  (declare (ignore args))
+  (dataedit-update-operations obj)
+  (call-next-method)
+  (when (dataedit-item-widget obj)
+    (with-html 
+      (:div :style "position:absolute;left:0;top:0;"
+       (:div :style "position:relative"
+        (:div :class "modal" :style "width:800px;margin-left:-400px;top:10px;margin-top:0;bottom:10px;margin-bottom:0;"
+         (:div :class "modal-body" :style "height:100%;max-height:100%;"
+          (render-widget (dataedit-item-widget obj)))
+         (with-javascript 
+           (ps:ps 
+             (ps:chain (j-query ".modal") (modal))
+             (ps:chain (j-query ".modal-backdrop") (unbind "click") (bind "click" (lambda () (return nil))))))))))))
