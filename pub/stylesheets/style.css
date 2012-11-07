@@ -39,3 +39,13 @@ span.value {
 .widget a.logout {
   float: right !important;
 }
+
+.library-grid .data-mining-bar {
+  position: relative;
+}
+
+.library-grid .total-items {
+  position: absolute; 
+  right:130px;
+  bottom: 15px;
+}

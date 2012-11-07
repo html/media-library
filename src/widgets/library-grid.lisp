@@ -23,7 +23,7 @@
         (get-total-compositions-size-used)))))))
 
 ; Copied from .quicklisp/local-projects/weblocks/src/widgets/datagrid/datagrid.lisp
-(defmethod dataseq-render-mining-bar ((obj datagrid) &rest args)
+(defmethod dataseq-render-mining-bar ((obj library-grid) &rest args)
   (with-html
     (:div :class "data-mining-bar"
 	  (when (dataseq-show-total-items-count-p obj)
@@ -105,7 +105,7 @@
                                                                              (values nil "You can only upload mp3 files"))
                                                                            t)))))
 
-(defmethod dataedit-create-drilldown-widget ((grid gridedit) item)
+(defmethod dataedit-create-drilldown-widget ((grid library-grid) item)
   (make-instance 'dataform
 		 :data item
 		 :class-store (dataseq-class-store grid)
@@ -133,3 +133,13 @@
 			     (dataedit-reset-state grid))
 		 :data-view (dataedit-item-data-view grid)
 		 :form-view (library-grid-form-view nil)))
+
+(defmethod render-dataseq-body :around ((obj library-grid) &rest args)
+  (with-html 
+    (:div :style "float:right;position:relative;"
+     (:div :style "position:absolute;right:0;bottom:20px"
+      (when (and (dataseq-allow-operations-p obj)
+                 (or (dataseq-item-ops obj)
+                     (dataseq-common-ops obj)))
+        (apply #'dataseq-render-operations obj args)))))
+  (call-next-method))
