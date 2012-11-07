@@ -19,7 +19,9 @@
     :firephp 
     :log4cl 
     :weblocks-twitter-bootstrap-application 
-    :weblocks-dataseq-records-count-panel)
+    :weblocks-dataseq-records-count-panel 
+    :cl-mustache
+    :weblocks-mustache-template-form-view)
    :components ((:file "media-library")
      (:module conf
       :components ((:file "stores"))

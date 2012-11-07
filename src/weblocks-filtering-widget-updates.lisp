@@ -12,9 +12,20 @@
       (render-filter-form widget)
       (:div :style "clear:both"))))
 
+(mustache:defmustache simple-search-form-view 
+                      (yaclml:with-yaclml-output-to-string 
+                        (<:h1 
+                          (<:as-is "{{form-title}}"))
+                        (<:as-is "{{{form-validation-summary}}}")
+                        (<:div :class "pull-left"
+                               (<:as-is "{{{form-body}}}")) 
+                        (<:div :class "pull-left" :style "padding-top:5px;"
+                               (<:as-is "{{{form-view-buttons}}}"))))
+
 (defmacro filtering-form-simple-view (widget)
   `(defview nil 
-            (:type form :persistp nil :buttons '((:submit . "Search")) 
+            (:type mustache-template-form :persistp nil :buttons '((:submit . "Search")) 
+             :template #'simple-search-form-view
              :caption "Searching ...")
             (compare-value :label "" :present-as input)
             (switch-to-complex 
@@ -169,7 +180,6 @@
                              (str required-indicator))
                            (str "&nbsp;"))))))))
        (:div 
-         :style "float:left;width:350px;"
          (apply #'render-view-field-value
               value presentation
               field view widget obj

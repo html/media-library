@@ -28,3 +28,6 @@
 [submodule ".quicklisp/local-projects/weblocks-dataseq-records-count-panel"]
 	path = .quicklisp/local-projects/weblocks-dataseq-records-count-panel
 	url = git://github.com/html/weblocks-dataseq-records-count-panel.git
+[submodule ".quicklisp/local-projects/weblocks-mustache-template-form-view"]
+	path = .quicklisp/local-projects/weblocks-mustache-template-form-view
+	url = git://github.com/html/weblocks-mustache-template-form-view.git
