@@ -6,7 +6,7 @@
 (defmethod render-filter-form ((widget custom-filtering-widget))
   (render-widget (get-filter-form widget)))
 
-(defmethod render-widget-body :around ((widget filtering-widget) &rest args)
+(defmethod render-widget-body :around ((widget custom-filtering-widget) &rest args)
   (with-slots (filters filter-form-visible add-filter-action) widget 
     (with-html 
       (render-filter-form widget)
@@ -68,7 +68,7 @@
                                                             (setf (slot-value ,widget 'filtering-form-instance) nil)
                                                             (mark-dirty ,widget))) "simple search")))))))
 
-(defun make-filtering-form (widget data &rest args)
+(defun make-filtering-form-custom (widget data &rest args)
   (setf (getf data :field) (string (getf data :field)))
   (let* ((presentation (cl-config:get-value 
                          :weblocks-filtering-widget.filtering-form-fields-presentation 
@@ -98,7 +98,7 @@
     (or 
       filtering-form-instance
       (setf filtering-form-instance 
-            (make-filtering-form 
+            (make-filtering-form-custom 
               widget
               (list :field (getf (first (slot-value widget 'form-fields)) :id) :compare-type "like")
               :on-success (lambda (form object)
