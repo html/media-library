@@ -37,8 +37,8 @@
                  :use-ajax-p nil)
             (item-updated-at :present-as hidden :writer (lambda (value item)
                                                           (setf (slot-value item 'item-updated-at) (get-universal-time))))
-            (cached-artist :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
-            (cached-track-title :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
+            (cached-artist :label "Artist" :present-as input)
+            (cached-track-title :label "Track Title" :present-as input)
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-bit-rate :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
@@ -178,7 +178,7 @@
      (:th "")))
   (safe-apply (table-view-header-row-suffix-fn view) view obj args))
 
-(defmethod render-widget-body :around ((obj gridedit) &rest args)
+(defmethod render-widget-body :around ((obj library-grid) &rest args)
   (declare (ignore args))
   (dataedit-update-operations obj)
   (call-next-method)
