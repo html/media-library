@@ -31,3 +31,6 @@
 [submodule ".quicklisp/local-projects/weblocks-mustache-template-form-view"]
 	path = .quicklisp/local-projects/weblocks-mustache-template-form-view
 	url = git://github.com/html/weblocks-mustache-template-form-view.git
+[submodule ".quicklisp/local-projects/weblocks-strings-translation-app"]
+	path = .quicklisp/local-projects/weblocks-strings-translation-app
+	url = git://github.com/html/weblocks-strings-translation-app.git
