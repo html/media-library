@@ -43,6 +43,12 @@
     (when item-created-at
       (net.telent.date:universal-time-to-rfc-date item-created-at))))
 
+(defmethod delete-persistent-object :around (store (obj composition))
+  (handler-case 
+    (delete-file (composition-file-name obj))
+    (file-error () (eval `(log:info ,(format nil "Unable to delete ~A" (composition-file-name obj))))))
+  (call-next-method))
+
 (defun update-all-compositions-cached-data ()
   (loop for i in (weblocks-utils:all-of 'composition) do
         (setf (slot-value i 'cached-artist) (composition-artist i))
