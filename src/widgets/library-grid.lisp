@@ -30,15 +30,18 @@
 	  (when (dataseq-allow-select-p obj)
 	    (apply #'weblocks::render-select-bar obj args)))))
 
-(defmacro library-grid-form-view (file-field-required-p)
+(defmacro library-grid-form-view (file-field-required-p &optional display-edit-fields-p)
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
                  :use-ajax-p nil 
                  :buttons '((:submit . "Submit") (:cancel . "Cancel")))
             (item-updated-at :present-as hidden :writer (lambda (value item)
                                                           (setf (slot-value item 'item-updated-at) (get-universal-time))))
-            (cached-artist :label "Artist" :present-as input)
-            (cached-track-title :label "Track Title" :present-as input)
+            ,@(if display-edit-fields-p
+                '((cached-artist :label "Artist" :present-as input) 
+                  (cached-track-title :label "Track Title" :present-as input))
+                '((cached-artist :label "" :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
+                  (cached-track-title :label "" :present-as hidden :writer (lambda (&rest args) (declare (ignore args)))))) 
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-bit-rate :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
@@ -68,28 +71,29 @@
                                                               (ps:create 
                                                                 max-character-size 160 
                                                                 display-format "#input Characters | #left Characters Left"))))))))))))
-            (mp3-preview 
-              :label "Mp3 Preview"
-              :present-as html
-              :reader (lambda (item)
-                        (with-slots (file) item
-                          (when file 
-                            (yaclml:with-yaclml-output-to-string
-                              (<:div :style "float:left;"
-                                     (<:as-is (format nil "
-                                                      <object type='application/x-shockwave-flash' data='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' width='200' height='20'>
-                                                      <param name='movie' value='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' />
-                                                      <param name='bgcolor' value='#ffffff' />
-                                                      <param name='FlashVars' value='mp3=~a&amp;showvolume=1' />
-                                                      </object>
-                                                      " (composition-file-url item)))))))))
-                                                      (mp3-id3-data 
-                                                        :label "Mp3 Id3 Data"
-                                                        :present-as html 
-                                                        :reader (lambda (item)
-                                                                  (cl-ppcre:regex-replace-all "\\n"
-                                                                                              (get-file-id3-info (composition-file-name item))
-                                                                                              "<br/>")))
+            ,@(when display-edit-fields-p 
+                '((mp3-preview 
+                    :label "Mp3 Preview"
+                    :present-as html
+                    :reader (lambda (item)
+                              (with-slots (file) item
+                                (when file 
+                                  (yaclml:with-yaclml-output-to-string
+                                    (<:div :style "float:left;"
+                                           (<:as-is (format nil "
+                                                            <object type='application/x-shockwave-flash' data='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' width='200' height='20'>
+                                                            <param name='movie' value='http://flash-mp3-player.net/medias/player_mp3_maxi.swf' />
+                                                            <param name='bgcolor' value='#ffffff' />
+                                                            <param name='FlashVars' value='mp3=~a&amp;showvolume=1' />
+                                                            </object>
+                                                            " (composition-file-url item)))))))))
+                                                            (mp3-id3-data 
+                                                              :label "Mp3 Id3 Data"
+                                                              :present-as html 
+                                                              :reader (lambda (item)
+                                                                        (cl-ppcre:regex-replace-all "\\n"
+                                                                                                    (get-file-id3-info (composition-file-name item))
+                                                                                                    "<br/>"))))) 
                                                       (file 
                                                         :label "File"
                                                         :present-as file-upload 
@@ -138,7 +142,7 @@
 			     (declare (ignore obj))
 			     (dataedit-reset-state grid))
 		 :data-view (dataedit-item-data-view grid)
-		 :form-view (library-grid-form-view nil)))
+		 :form-view (library-grid-form-view nil t)))
 
 (defmethod render-dataseq-body :around ((obj library-grid) &rest args)
   (with-html 
