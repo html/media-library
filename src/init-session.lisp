@@ -329,7 +329,7 @@ scales down to 'do-modal' instead."
   (when (and 
           (string= email "test@spamavert.com")
           (string= password (weblocks:hash-password "test"))) 
-    (setf (%current-user) (list :ok t :name "Admin"))
+    (setf (%current-user) (list :ok t :name "Administrator"))
     (eval `(log:info , (format nil "Logged in as ~A from ip ~A" (current-user-name) (hunchentoot:remote-addr*))))
     t))
 
