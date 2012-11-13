@@ -17,9 +17,8 @@
 	   (str (let ((total-items-count (dataseq-data-count obj)))
 		  (format nil "Total of <b>~A ~A</b>, disk size taken <b>~A</b>"
 			  total-items-count
-			  (proper-number-form total-items-count
-					      (humanize-name
-					       (dataseq-data-class obj)))
+              (proper-number-form total-items-count
+                                  "Composition")
         (get-total-compositions-size-used)))))))
 
 ; Copied from .quicklisp/local-projects/weblocks/src/widgets/datagrid/datagrid.lisp
@@ -34,7 +33,8 @@
 (defmacro library-grid-form-view (file-field-required-p)
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
-                 :use-ajax-p nil)
+                 :use-ajax-p nil 
+                 :buttons '((:submit . "Submit") (:cancel . "Cancel")))
             (item-updated-at :present-as hidden :writer (lambda (value item)
                                                           (setf (slot-value item 'item-updated-at) (get-universal-time))))
             (cached-artist :label "Artist" :present-as input)
@@ -42,6 +42,7 @@
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-bit-rate :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
+              :label "Text"
               :requiredp t
               :present-as textarea 
               :satisfies (lambda (item)
@@ -68,6 +69,7 @@
                                                                 max-character-size 160 
                                                                 display-format "#input Characters | #left Characters Left"))))))))))))
             (mp3-preview 
+              :label "Mp3 Preview"
               :present-as html
               :reader (lambda (item)
                         (with-slots (file) item
@@ -81,29 +83,33 @@
                                                       <param name='FlashVars' value='mp3=~a&amp;showvolume=1' />
                                                       </object>
                                                       " (composition-file-url item)))))))))
-                                                      (mp3-id3-data :present-as html 
-                                                                    :reader (lambda (item)
-                                                                              (cl-ppcre:regex-replace-all "\\n"
-                                                                                                          (get-file-id3-info (composition-file-name item))
-                                                                                                          "<br/>")))
-                                                      (file :present-as file-upload 
-                                                            :parse-as (file-upload 
-                                                                        :upload-directory (get-upload-directory)
-                                                                        :file-name :browser-with-cyrillic-transliteration)
-                                                            :writer (lambda (value item)
-                                                                      (when value 
-                                                                        (setf (slot-value item 'file) value)
-                                                                        (setf (slot-value item 'cached-artist) (composition-artist item))
-                                                                        (setf (slot-value item 'cached-track-title) (composition-track-title item))
-                                                                        (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
-                                                                        (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
-                                                            :requiredp ,file-field-required-p
-                                                            :satisfies (lambda (item)
-                                                                         (if item
-                                                                           (or 
-                                                                             (string= "mp3" (string-downcase (pathname-type item)))
-                                                                             (values nil "You can only upload mp3 files"))
-                                                                           t)))))
+                                                      (mp3-id3-data 
+                                                        :label "Mp3 Id3 Data"
+                                                        :present-as html 
+                                                        :reader (lambda (item)
+                                                                  (cl-ppcre:regex-replace-all "\\n"
+                                                                                              (get-file-id3-info (composition-file-name item))
+                                                                                              "<br/>")))
+                                                      (file 
+                                                        :label "File"
+                                                        :present-as file-upload 
+                                                        :parse-as (file-upload 
+                                                                    :upload-directory (get-upload-directory)
+                                                                    :file-name :browser-with-cyrillic-transliteration)
+                                                        :writer (lambda (value item)
+                                                                  (when value 
+                                                                    (setf (slot-value item 'file) value)
+                                                                    (setf (slot-value item 'cached-artist) (composition-artist item))
+                                                                    (setf (slot-value item 'cached-track-title) (composition-track-title item))
+                                                                    (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
+                                                                    (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
+                                                        :requiredp ,file-field-required-p
+                                                        :satisfies (lambda (item)
+                                                                     (if item
+                                                                       (or 
+                                                                         (string= "mp3" (string-downcase (pathname-type item)))
+                                                                         (values nil "You can only upload mp3 files"))
+                                                                       t)))))
 
 (defmethod dataedit-create-drilldown-widget ((grid library-grid) item)
   (make-instance 'dataform

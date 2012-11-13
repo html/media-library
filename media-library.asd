@@ -21,7 +21,8 @@
     :weblocks-twitter-bootstrap-application 
     :weblocks-dataseq-records-count-panel 
     :cl-mustache
-    :weblocks-mustache-template-form-view)
+    :weblocks-mustache-template-form-view 
+    :weblocks-strings-translation-app)
    :components ((:file "media-library")
      (:module conf
       :components ((:file "stores"))

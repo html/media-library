@@ -19,7 +19,7 @@
                         (<:as-is "{{{form-validation-summary}}}")
                         (<:div :class "pull-left"
                                (<:as-is "{{{form-body}}}")) 
-                        (<:div :class "pull-left" :style "padding-top:5px;"
+                        (<:div :class "pull-left"
                                (<:as-is "{{{form-view-buttons}}}"))))
 
 (defmacro filtering-form-simple-view (widget)
@@ -165,7 +165,7 @@
        (:label :class (format nil "control-label ~A"
                               (attributize-presentation
                         (view-field-presentation field)))
-               :style "display:block;float:left;width:100px;"
+               :style "display:block;float:left;"
                :for *presentation-dom-id*
                (:span :class "slot-name"
                 (:span :class "extra"

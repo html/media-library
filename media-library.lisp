@@ -1,6 +1,7 @@
 (defpackage #:media-library
   (:use :cl :weblocks
-        :f-underscore :anaphora :weblocks-utils :cl-who)
+        :f-underscore :anaphora :weblocks-utils :cl-who 
+        :weblocks-strings-translation-app)
   (:import-from :hunchentoot #:header-in
     #:set-cookie #:set-cookie* #:cookie-in
     #:user-agent #:referer)
@@ -27,7 +28,8 @@
 (defun start-media-library (&rest args)
   "Starts the application by calling 'start-weblocks' with appropriate arguments."
   (apply #'start-weblocks args)
-  (start-webapp 'media-library))
+  (start-webapp 'media-library)
+  (weblocks-strings-translation-app:start-weblocks-strings-translation-app :store *default-store*))
 
 (defun stop-media-library ()
   "Stops the application by calling 'stop-weblocks'."

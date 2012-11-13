@@ -1,4 +1,19 @@
 (load "src/weblocks-filtering-widget-updates.lisp")
+(in-package :weblocks-twitter-bootstrap-application)
+
+(defun render-button (name  &key (value (prevalence-serialized-i18n:translate (humanize-name name))) id (class "submit btn"))
+  "Renders a button in a form.
+
+   'name' - name of the html control. The name is attributized before
+   being rendered.
+   'value' - a value on html control. Humanized name is default.
+   'id' - id of the html control. Default is nil.
+   'class' - a class used for styling. By default, \"submit\"."
+  (with-html
+    (:input :name (attributize-name name) :type "submit" :id id :class class
+     :value value :onclick "disableIrrelevantButtons(this);")
+    (str "&nbsp;")))
+
 (in-package :weblocks)
 
 (defun update-dialog-on-request ()
@@ -260,34 +275,30 @@ scales down to 'do-modal' instead."
                                     :order-by 'id
                                     :reader (lambda (item)
                                               (format nil "#~A" (weblocks:object-id item))))
-                                (text :present-as html 
-                                      :order-by 'text
-                                      :reader (lambda (item)
-                                                (replace-search-values (composition-text item))))
-                                (file :present-as html 
-                                      :order-by 'file
-                                      :reader (lambda (item)
-                                                (replace-search-values (composition-file item))))
-                                (cached-track-title :present-as html 
-                                                    :label "Track title"
-                                                    :order-by 'cached-track-title
-                                                    :reader (lambda (item)
-                                                              (replace-search-values (composition-cached-track-title item))))
-                                (cached-bit-rate :present-as html 
-                                                 :label "Bit rate"
-                                                 :order-by 'cached-bit-rate
-                                                 :reader (lambda (item)
-                                                           (replace-search-values (composition-cached-bit-rate item))))
-                                (cached-sound-type :present-as html 
-                                                   :label "Sound type"
-                                                   :order-by 'cached-sound-type
-                                                   :reader (lambda (item)
-                                                             (replace-search-values (composition-cached-sound-type item))))
-                                (cached-artist :present-as html 
-                                               :label "Artist"
-                                               :order-by 'cached-artist
-                                               :reader (lambda (item)
-                                                         (replace-search-values (composition-cached-artist item))))
+                                (text 
+                                  :label "Text"
+                                  :present-as html 
+                                  :order-by 'text
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-text item))))
+                                (cached-track-title 
+                                  :present-as html 
+                                  :label "Track title"
+                                  :order-by 'cached-track-title
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-cached-track-title item))))
+                                (cached-bit-rate 
+                                  :present-as html 
+                                  :label "Bit rate"
+                                  :order-by 'cached-bit-rate
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-cached-bit-rate item))))
+                                (cached-artist 
+                                  :present-as html 
+                                  :label "Artist"
+                                  :order-by 'cached-artist
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-cached-artist item))))
                                 (created-at :present-as (date :format "%Y-%m-%d %H:%M:%S") 
                                             :label "Created at"
                                             :order-by 'item-created-at
@@ -302,14 +313,17 @@ scales down to 'do-modal' instead."
 
 (defview login-view (:type form :persistp nil
                               :inherit-from 'default-login-view
-                              :buttons '((:submit . "Login") :cancel)
+                              :buttons '((:submit . "Login") (:cancel . "Cancel"))
                               :caption "Login"
                               :focusp t)
-         (password :requiredp t
-                   :present-as (password :max-length 40)
-                   :writer (lambda (pwd obj)
-                             (setf (slot-value obj 'password)
-                                   (hash-password pwd)))))
+         (password 
+           :label "Password"
+           :requiredp t
+           :required-indicator nil
+           :present-as (password :max-length 40)
+           :writer (lambda (pwd obj)
+                     (setf (slot-value obj 'password)
+                           (hash-password pwd)))))
 
 (defun login-successfull-p (email password)
   (when (and 

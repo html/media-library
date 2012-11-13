@@ -18,13 +18,17 @@
       (require :linedit)
       (funcall (intern "INSTALL-REPL" :linedit) :wrap-current t)))
 
+; First load globalization stuff
+(require :yaclml)
+(load "globalization-macros.lisp")
 (asdf:operate 'asdf:load-op 'weblocks)
 
 (asdf:oos 'asdf:load-op 'swank)
 (swank:create-server :dont-close t :port *swank-port*)
+(require :weblocks-strings-translation-app)
 
 (ql:quickload :net-telent-date)
-(asdf:oos 'asdf:load-op 'media-library)
+(require :media-library)
 (media-library:start-media-library :port *port*)
 
 ;; sending "\033[2J" to clear screen
