@@ -177,7 +177,7 @@
          (apply #'render-table-view-body-row view obj widget :row-action row-action args)
          (:td :style "white-space:nowrap;"
            (when (not drilled-down-p)
-             (render-link row-action "<i class=\"icon-edit\"></i>&nbsp;Edit" :class "btn btn-primary")))))
+             (render-link row-action "<i class=\"icon-pencil\"></i>" :class "btn btn-small btn-info")))))
 	(safe-apply (sequence-view-row-suffix-fn view) view obj args))
       (call-next-method)))
 
