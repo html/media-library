@@ -46,3 +46,11 @@ td.created-at span.value, td.updated-at span.value {
     white-space: nowrap !important;
     font-size: small;
 }
+
+.messages .alert p {
+    margin-bottom: 0;
+}
+
+.dataseq-records-count-panel {
+    margin-bottom: 10px;
+}

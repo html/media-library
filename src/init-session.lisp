@@ -1,6 +1,23 @@
 (load "src/weblocks-filtering-widget-updates.lisp")
 (in-package :weblocks-twitter-bootstrap-application)
 
+
+(defmethod render-widget-body ((obj flash) &rest args)
+  (declare (special *on-ajax-complete-scripts* *dirty-widgets*))
+  (let ((messages (weblocks::flash-messages-to-show obj)))
+    (when messages
+      (with-html
+	(:div :class "view row"
+	      (with-extra-tags
+		(htm
+		 (:div :class "messages span8 clearfix"
+		      (mapc (lambda (msg)
+                      (htm (:div :class "alert" 
+                            (:button :type "button" :class "close" :data-dismiss "alert" "x")
+                            (:strong (apply #'render-widget msg args)))))
+			    messages))))))
+      (send-script (ps* `((@ ($ ,(dom-id obj)) show)))))))
+
 (defun render-button (name  &key (value (prevalence-serialized-i18n:translate (humanize-name name))) id (class "submit btn"))
   "Renders a button in a form.
 
