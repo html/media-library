@@ -57,20 +57,29 @@
               :present-as html 
               :reader (lambda (&rest args)
                         (yaclml:with-yaclml-output-to-string 
-                          (<:br)
                           (<:script :type "text/javascript"
                                     (<:as-is 
                                       (ps:ps 
-                                        (unless document.textareachanged
-                                          (setf document.textareachanged t)
-                                          (with-scripts "/pub/scripts/jquery.textareaCounter.plugin.js" 
-                                                        (lambda ()
-                                                          (ps:chain 
-                                                            (j-query "textarea")
-                                                            (textarea-count 
-                                                              (ps:create 
-                                                                max-character-size 160 
-                                                                display-format "#input Characters | #left Characters Left"))))))))))))
+                                        (with-scripts 
+                                          "/pub/scripts/bootstrap-limit.js" 
+                                          (lambda ()
+                                            (unless (ps:chain (j-query "textarea") (siblings ".text-counter") length)
+                                              (ps:chain (j-query "<div class=\"text-counter\"/>") (insert-after "textarea")))
+                                            (ps:chain 
+                                              (j-query "textarea")
+                                              (limit 
+                                                (ps:create 
+                                                  max-chars 160 
+                                                  counter (j-query "div.text-counter")))) 
+                                            (ps:chain 
+                                              (j-query window) 
+                                              (unbind "cross")
+                                              (bind "cross" (lambda (event)
+                                                              (setf event.target.value 
+                                                                    (ps:chain event.target.value 
+                                                                              (substr 0 160)))
+                                                              (ps:chain (j-query event.target) (trigger "keypress"))
+                                                              )))))))))))
             ,@(when display-edit-fields-p 
                 '((mp3-preview 
                     :label "Mp3 Preview"

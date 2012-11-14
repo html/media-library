@@ -54,3 +54,7 @@ td.created-at span.value, td.updated-at span.value {
 .dataseq-records-count-panel {
     margin-bottom: 10px;
 }
+
+.text-counter {
+    margin-left: 160px;
+}
