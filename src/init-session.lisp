@@ -275,36 +275,36 @@ scales down to 'do-modal' instead."
                                     :order-by 'id
                                     :reader (lambda (item)
                                               (format nil "#~A" (weblocks:object-id item))))
-                                (text 
-                                  :label "Text"
-                                  :present-as html 
-                                  :order-by 'text
-                                  :reader (lambda (item)
-                                            (replace-search-values (composition-text item))))
-                                (cached-track-title 
-                                  :present-as html 
-                                  :label "Track title"
-                                  :order-by 'cached-track-title
-                                  :reader (lambda (item)
-                                            (replace-search-values (composition-cached-track-title item))))
-                                (cached-bit-rate 
-                                  :present-as html 
-                                  :label "Bit rate"
-                                  :order-by 'cached-bit-rate
-                                  :reader (lambda (item)
-                                            (replace-search-values (composition-cached-bit-rate item))))
                                 (cached-artist 
                                   :present-as html 
                                   :label "Artist"
                                   :order-by 'cached-artist
                                   :reader (lambda (item)
                                             (replace-search-values (composition-cached-artist item))))
-                                (created-at :present-as (date :format "%Y-%m-%d %H:%M:%S") 
+                                (cached-track-title 
+                                  :present-as html 
+                                  :label "Track title"
+                                  :order-by 'cached-track-title
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-cached-track-title item))))
+                                (text 
+                                  :label "Text"
+                                  :present-as html 
+                                  :order-by 'text
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-text item))))
+                                (cached-bit-rate 
+                                  :present-as html 
+                                  :label "BR"
+                                  :order-by 'cached-bit-rate
+                                  :reader (lambda (item)
+                                            (replace-search-values (composition-cached-bit-rate item))))
+                                (created-at :present-as (date :format "%d.%m.%Y %H:%M") 
                                             :label "Created at"
                                             :order-by 'item-created-at
                                             :reader (lambda (item)
                                                       (slot-value item 'item-created-at)))
-                                (updated-at :present-as (date :format "%Y-%m-%d %H:%M:%S") 
+                                (updated-at :present-as (date :format "%d.%m.%Y %H:%M") 
                                             :label "Updated at"
                                             :order-by 'item-updated-at
                                             :reader (lambda (item)

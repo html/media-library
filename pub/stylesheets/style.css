@@ -41,3 +41,8 @@ span.value {
 .filtering-form .compare-value input {
   width: 550px;
 }
+
+td.created-at span.value, td.updated-at span.value {
+    white-space: nowrap !important;
+    font-size: small;
+}
