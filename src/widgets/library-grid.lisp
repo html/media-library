@@ -77,7 +77,20 @@
                                                                     (ps:chain event.target.value 
                                                                               (substr 0 160)))
                                                               (ps:chain (j-query event.target) (trigger "keypress"))
-                                                              )))))))))))
+                                                              )))
+                                            (ps:chain 
+                                              (j-query ".modal .submit.btn.btn-primary") 
+                                              (click (lambda ()
+                                                       (if (not (ps:chain (j-query ".modal textarea") (val) (trim) length))
+                                                         (progn 
+                                                           (ps:chain (j-query ".modal fieldset .text-error") (remove))
+                                                           (ps:chain 
+                                                             (j-query ".modal fieldset") 
+                                                             (prepend "<div class=\"text-error\"><ul class=\"field-validation-errors\"><li>Текст обязательное поле.</li></ul></div>"))
+                                                           false)
+                                                         t))))
+                                            
+                                            ))))))))
             ,@(when display-edit-fields-p 
                 '((mp3-preview 
                     :label "Mp3 Preview"
