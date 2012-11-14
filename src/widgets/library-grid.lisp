@@ -35,13 +35,11 @@
                  :enctype "multipart/form-data"
                  :use-ajax-p nil 
                  :buttons '((:submit . "Submit") (:cancel . "Cancel")))
-            (item-updated-at :present-as hidden :writer (lambda (value item)
-                                                          (setf (slot-value item 'item-updated-at) (get-universal-time))))
-            ,@(if display-edit-fields-p
-                '((cached-artist :label "Artist" :present-as input) 
-                  (cached-track-title :label "Track Title" :present-as input))
-                '((cached-artist :label "" :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
-                  (cached-track-title :label "" :present-as hidden :writer (lambda (&rest args) (declare (ignore args)))))) 
+            (item-updated-at :present-as hidden 
+                             :writer (lambda (value item)
+                                       (setf (slot-value item 'item-updated-at) (get-universal-time))))
+            (cached-artist :label "Artist" :present-as input) 
+            (cached-track-title :label "Track Title" :present-as input)
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (cached-bit-rate :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
             (text 
@@ -112,8 +110,6 @@
                                                         :writer (lambda (value item)
                                                                   (when value 
                                                                     (setf (slot-value item 'file) value)
-                                                                    (setf (slot-value item 'cached-artist) (composition-artist item))
-                                                                    (setf (slot-value item 'cached-track-title) (composition-track-title item))
                                                                     (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
                                                                     (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
                                                         :requiredp ,file-field-required-p
