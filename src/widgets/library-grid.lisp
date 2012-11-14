@@ -147,7 +147,7 @@
 (defmethod render-dataseq-body :around ((obj library-grid) &rest args)
   (with-html 
     (:div :style "float:right;position:relative;"
-     (:div :style "position:absolute;right:0;bottom:20px"
+     (:div :style "position:absolute;right:0;bottom:10px"
       (when (and (dataseq-allow-operations-p obj)
                  (or (dataseq-item-ops obj)
                      (dataseq-common-ops obj)))
