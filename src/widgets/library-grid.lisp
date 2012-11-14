@@ -167,15 +167,25 @@
 				     &key alternp &allow-other-keys)
   (if (and (dataseq-allow-drilldown-p widget)
 	   (dataseq-on-drilldown widget))
-      (let ((row-action (make-action
-			 (lambda (&rest args)
-			   (declare (ignore args))
-			   (when (dataseq-autoset-drilled-down-item-p widget)
-			     (setf (dataseq-drilled-down-item widget) obj))
-			   (funcall (cdr (dataseq-on-drilldown widget)) widget obj))))
-	    (drilled-down-p (and (dataseq-drilled-down-item widget)
-				 (eql (object-id (dataseq-drilled-down-item widget))
-				      (object-id obj)))))
+    (let ((row-action (make-action
+                        (lambda (&rest args)
+                          (declare (ignore args))
+                          (when (dataseq-autoset-drilled-down-item-p widget)
+                            (setf (dataseq-drilled-down-item widget) obj))
+                          (funcall (cdr (dataseq-on-drilldown widget)) widget obj))))
+          (drilled-down-p (and (dataseq-drilled-down-item widget)
+                               (eql (object-id (dataseq-drilled-down-item widget))
+                                    (object-id obj))))
+          (delete-action (make-action 
+                           (lambda/cc (&rest args)
+                             (when (eq :yes 
+                                       (do-confirmation "Are you sure you want to delete this record ?" :type :yes/no))
+                               (let* ((id (parse-integer (getf args :id)))
+                                      (item (first-by-values 'composition :id id)))
+                                 (flash-message (dataseq-flash widget)
+                                                (format nil "Deleted item with id ~A." id))
+                                 (delete-one item)) 
+                               (mark-dirty widget))))))
 	(safe-apply (sequence-view-row-prefix-fn view) view obj args)
 	(with-html
     (:tr :class (when (or alternp drilled-down-p)
@@ -185,8 +195,15 @@
                                (when drilled-down-p "drilled-down")))
          (apply #'render-table-view-body-row view obj widget :row-action row-action args)
          (:td :style "white-space:nowrap;"
+          (:div :class "btn-group"
            (when (not drilled-down-p)
-             (render-link row-action "<i class=\"icon-pencil\"></i>" :class "btn btn-small btn-info")))))
+             (render-link row-action "<i class=\"icon-pencil\"></i>" :class "btn btn-small btn-info")
+             (htm
+               (:a :class  "btn btn-small btn-danger"
+                :href (add-get-param-to-url (make-action-url delete-action) "id" (write-to-string (object-id obj))) :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: \"~A\"}); return false;"
+                                           delete-action (session-name-string-pair) (object-id obj))
+                "<i class=\"icon-trash\"></i>" 
+                )))))))
 	(safe-apply (sequence-view-row-suffix-fn view) view obj args))
       (call-next-method)))
 
