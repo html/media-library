@@ -1,5 +1,6 @@
 (in-package :media-library)
 
+(defvar *max-chars-for-description* 1200)
 
 (defwidget library-grid (gridedit)
   ())
@@ -47,9 +48,10 @@
               :requiredp t
               :present-as textarea 
               :satisfies (lambda (item)
+                           (setf item (normalize-newlines item))
                            (or 
-                             (<= (length item) 160)
-                             (values nil "Should be less then 160 characters"))))
+                             (<= (length item) *max-chars-for-description*)
+                             (values nil (format nil "Should be less than ~A characters" *max-chars-for-description*)))))
             (textarea-initialization 
               :label ""
               :present-as html 
@@ -67,7 +69,7 @@
                                               (j-query "textarea")
                                               (limit 
                                                 (ps:create 
-                                                  max-chars 160 
+                                                  max-chars (ps:LISP *max-chars-for-description*) 
                                                   counter (j-query "div.text-counter")))) 
                                             (ps:chain 
                                               (j-query window) 
@@ -75,7 +77,7 @@
                                               (bind "cross" (lambda (event)
                                                               (setf event.target.value 
                                                                     (ps:chain event.target.value 
-                                                                              (substr 0 160)))
+                                                                              (substr 0 (ps:LISP *max-chars-for-description*))))
                                                               (ps:chain (j-query event.target) (trigger "keypress"))
                                                               )))
                                             (ps:chain 

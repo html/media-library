@@ -56,6 +56,9 @@
         (setf (slot-value i 'cached-bit-rate) (composition-bit-rate i))
         (setf (slot-value i 'cached-sound-type) (composition-sound-type i))))
 
+(defmethod (setf composition-text) :around (value (item composition))
+  (call-next-method (normalize-newlines value) item))
+
 (defun generate-composition ()
   (let ((composition (make-instance 'composition)))
     (setf (composition-text composition) "test text")

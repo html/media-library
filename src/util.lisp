@@ -69,3 +69,10 @@
   `(let ((*weblocks-output-stream* (make-string-output-stream)))
      ,@body 
      (get-output-stream-string *weblocks-output-stream*)))
+
+(defun normalize-newlines (string)
+  (ppcre:regex-replace-all (format nil "~C(\n)?" #\return) string "\n"))
+
+(assert (string= (normalize-newlines "as\ndf") "as\ndf"))
+(assert (string= (normalize-newlines (format nil "as~C\ndf" #\return)) "as\ndf"))
+(assert (string= (normalize-newlines (format nil "as~Cdf" #\return)) "as\ndf"))

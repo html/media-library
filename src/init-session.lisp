@@ -249,18 +249,18 @@ scales down to 'do-modal' instead."
     (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>")
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
        (:channel (:title "Mp3 chaos")
-        (:link (str app-domain))
+        (:link (esc app-domain))
         (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
         (loop for model in (weblocks-utils:all-of 'composition)
               do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
-                   (htm (:item (:title (str (slot-value model 'file)))
-                       (:link (str file-url))
-                       (:guid  (str file-url))
-                       (:description (str (composition-text model)))
-                       (:enclosure :url file-url :length (with-open-file (in (composition-file-name model)) (file-length in)) :type "audio/mp3")
-                       (when (composition-created-at-rfc-822 model)
-                         (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
+                   (htm (:item (:title (esc (slot-value model 'file)))
+                               (:link (esc file-url))
+                               (:guid (esc file-url))
+                               (:description (esc (composition-text model)))
+                               (:enclosure :url file-url :length (with-open-file (in (composition-file-name model)) (file-length in)) :type "audio/mp3")
+                               (when (composition-created-at-rfc-822 model)
+                                 (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
     weblocks:*weblocks-output-stream*)))
 
 (push 
@@ -387,7 +387,7 @@ scales down to 'do-modal' instead."
                                               :id :track-title
                                               :caption "Track title"
                                               :accessor #'composition-cached-track-title)))))
-            (when (show-login-form)
+            (when t;(show-login-form)
               (do-page 
                 (list 
                   (lambda (&rest args)
