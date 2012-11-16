@@ -387,7 +387,7 @@ scales down to 'do-modal' instead."
                                               :id :track-title
                                               :caption "Track title"
                                               :accessor #'composition-cached-track-title)))))
-            (when t;(show-login-form)
+            (when (show-login-form)
               (do-page 
                 (list 
                   (lambda (&rest args)
