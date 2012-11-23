@@ -1,3 +1,9 @@
 Utility functions 
 
 update-all-compositions-cached-data 
+
+= External programs required for application. =
+
+id3v2
+python-chardet
+mp3info
