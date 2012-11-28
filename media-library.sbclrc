@@ -20,7 +20,7 @@
 
 ; First load globalization stuff
 (require :yaclml)
-(load "globalization-macros.lisp")
+;(load "globalization-macros.lisp")
 (asdf:operate 'asdf:load-op 'weblocks)
 
 (asdf:oos 'asdf:load-op 'swank)

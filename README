@@ -1,8 +1,29 @@
-Utility functions 
+= Application description =
+This is sample weblocks application. It demonstrates use of following packages 
+
+== Visual stuff ==
+
+* weblocks-twitter-bootstrap-application  - Twitter Bootstrap for weblocks. See https://github.com/html/weblocks-twitter-bootstrap-application
+* weblocks-filtering-widget - widget for weblocks to search/filter grid items. See https://github.com/html/weblocks-filtering-widget
+* weblocks-records-count-panel - widget for weblocks which allows to change items per page for grid widget. See https://github.com/html/weblocks-dataseq-records-count-panel
+
+== Other packages ==
+
+* weblocks-utils, see https://github.com/html/weblocks-utils
+* weblocks-mustache-template-form-view, see https://github.com/html/weblocks-mustache-template-form-view
+
+For russian-speaking users there is russian localization, it was tested with sbcl and changes strings to russian equivalents during compiling, so it may be tricky and needs recompiling code (I just remove needed directory from ~/.cache/common-lisp/sbcl-* and compile source).
+To use it uncomment 
+
+;(load "globalization-macros.lisp")
+
+string in media-library.sbclrc
+
+= Utility functions  =
 
 update-all-compositions-cached-data 
 
-= External programs required for application. =
+= External programs required for application to work. =
 
 id3v2
 python-chardet
