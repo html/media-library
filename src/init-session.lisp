@@ -1,4 +1,5 @@
 (load "src/weblocks-filtering-widget-updates.lisp")
+(load "src/prevalence-ids-from-1-updates.lisp")
 (in-package :weblocks-twitter-bootstrap-application)
 
 
