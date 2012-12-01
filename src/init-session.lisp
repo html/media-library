@@ -204,6 +204,7 @@ scales down to 'do-modal' instead."
 (in-package :media-library)
 
 (log:config :daily "pub/log.txt")
+(setf weblocks:*max-raw-input-length* 500)
 
 (defmacro with-yaclml (&body body)
   "A wrapper around cl-yaclml with-yaclml-stream macro."
