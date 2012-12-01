@@ -254,7 +254,7 @@ scales down to 'do-modal' instead."
         (:link (esc app-domain))
         (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
-        (loop for model in (weblocks-utils:all-of 'composition)
+        (loop for model in (weblocks-utils:all-of 'composition :order-by (cons 'id :desc))
               do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
                    (htm (:item (:title (esc (slot-value model 'file)))
                                (:link (esc file-url))
