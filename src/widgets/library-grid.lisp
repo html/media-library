@@ -34,7 +34,7 @@
 (defmacro library-grid-form-view (file-field-required-p &optional display-edit-fields-p)
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
-                 :use-ajax-p nil 
+                 :use-ajax-p t 
                  :buttons '((:submit . "Submit") (:cancel . "Cancel")))
             (item-updated-at :present-as hidden 
                              :writer (lambda (value item)
@@ -118,8 +118,8 @@
                                                                                                     "<br/>"))))) 
                                                       (file 
                                                         :label "File"
-                                                        :present-as file-upload 
-                                                        :parse-as (file-upload 
+                                                        :present-as ajax-file-upload 
+                                                        :parse-as (ajax-file-upload 
                                                                     :upload-directory (get-upload-directory)
                                                                     :file-name :browser-with-cyrillic-transliteration)
                                                         :writer (lambda (value item)
@@ -228,18 +228,23 @@
 (defmethod render-widget-body :around ((obj library-grid) &rest args)
   (declare (ignore args))
   (dataedit-update-operations obj)
-  (call-next-method)
-  (when (dataedit-item-widget obj)
-    (with-html 
-      (:div :style "position:absolute;left:0;top:0;"
-       (:div :style "position:relative"
-        (:div :class "modal" :style "width:800px;margin-left:-400px;top:10px;margin-top:0;bottom:10px;margin-bottom:0;"
-         (:div :class "modal-body" :style "height:100%;max-height:100%;"
-          (render-widget (dataedit-item-widget obj)))
-         (with-javascript 
-           (ps:ps 
-             (ps:chain (j-query ".modal") (modal))
-             (ps:chain (j-query ".modal-backdrop") (unbind "click") (bind "click" (lambda () nil)))))))))))
+  (let ((dataedit-item-widget (dataedit-item-widget obj)))
+    (setf (dataedit-item-widget obj) nil)
+    (call-next-method)
+    (setf (dataedit-item-widget obj) dataedit-item-widget)
+    (if dataedit-item-widget
+      (with-html 
+        (:div :style "position:absolute;left:0;top:0;"
+         (:div :style "position:relative"
+          (:div :class "modal" :style "width:800px;margin-left:-400px;top:10px;margin-top:0;bottom:10px;margin-bottom:0;"
+           (:div :class "modal-body" :style "height:100%;max-height:100%;"
+            (render-widget (dataedit-item-widget obj)))
+           (with-javascript 
+             (ps:ps 
+               (ps:chain (j-query ".modal") (modal))
+               (ps:chain (j-query ".modal-backdrop") (unbind "click") (bind "click" (lambda () nil)))))))))
+      (send-script 
+        (ps:ps (ps:chain (j-query ".modal-backdrop") (remove)))))))
 
 (defmethod dataedit-create-new-item-widget ((grid library-grid))
     (make-instance 'dataform

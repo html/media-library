@@ -5,7 +5,7 @@
 
 (defsystem media-library
    :name "media-library"
-   :version "0.0.2"
+   :version "0.1.0"
    :maintainer ""
    :author ""
    :licence ""
@@ -22,7 +22,8 @@
     :weblocks-dataseq-records-count-panel 
     :cl-mustache
     :weblocks-mustache-template-form-view 
-    :weblocks-strings-translation-app)
+    :weblocks-strings-translation-app 
+    :weblocks-ajax-file-upload-presentation)
    :components ((:file "media-library")
      (:module conf
       :components ((:file "stores"))

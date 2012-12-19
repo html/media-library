@@ -37,3 +37,6 @@
 [submodule ".quicklisp/local-projects/prevalence-serialized-i18n"]
 	path = .quicklisp/local-projects/prevalence-serialized-i18n
 	url = git://github.com/html/prevalence-serialized-i18n.git
+[submodule ".quicklisp/local-projects/weblocks-ajax-file-upload-presentation"]
+	path = .quicklisp/local-projects/weblocks-ajax-file-upload-presentation
+	url = git://github.com/html/weblocks-ajax-file-upload-presentation.git
