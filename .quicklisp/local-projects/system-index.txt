@@ -27,6 +27,7 @@ weblocks/contrib/yarek/examples/employer-employee/employer-employee.asd
 weblocks-dataseq-records-count-panel/weblocks-dataseq-records-count-panel.asd
 weblocks-mustache-template-form-view/weblocks-mustache-template-form-view.asd
 weblocks/contrib/yarek/examples/weblocks-demo-popover/weblocks-demo-popover.asd
+weblocks-ajax-file-upload-presentation/weblocks-ajax-file-upload-presentation.asd
 weblocks-twitter-bootstrap-application/weblocks-twitter-bootstrap-application.asd
 weblocks-strings-translation-app/.quicklisp/local-projects/cl-config/cl-config.asd
 weblocks-strings-translation-app/.quicklisp/dists/quicklisp/software/xcvb-0.594/xcvb.asd
