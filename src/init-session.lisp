@@ -286,7 +286,7 @@ scales down to 'do-modal' instead."
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
        (:channel (:title "Mp3 chaos")
         (:link (esc app-domain))
-        (:|atom:link| :href (concatenate 'string *app-protocol-and-domain* "/feed.rss") :rel "self" :type "application/rss+xml")
+        (:|atom:link| :href (concatenate 'string *app-protocol-and-domain* "/new-feed.rss") :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
         (loop for model in (weblocks-utils:all-of 'composition :order-by (cons 'id :desc))
               do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
