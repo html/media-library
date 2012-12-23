@@ -30,6 +30,7 @@ weblocks/contrib/yarek/examples/weblocks-demo-popover/weblocks-demo-popover.asd
 weblocks-ajax-file-upload-presentation/weblocks-ajax-file-upload-presentation.asd
 weblocks-twitter-bootstrap-application/weblocks-twitter-bootstrap-application.asd
 weblocks-strings-translation-app/.quicklisp/local-projects/cl-config/cl-config.asd
+weblocks-ajax-file-upload-presentation/weblocks-ajax-file-upload-presentation-tests.asd
 weblocks-strings-translation-app/.quicklisp/dists/quicklisp/software/xcvb-0.594/xcvb.asd
 weblocks-strings-translation-app/.quicklisp/dists/quicklisp/software/cffi_0.10.7.1/cffi.asd
 weblocks-strings-translation-app/.quicklisp/dists/quicklisp/software/chunga-1.1.1/chunga.asd

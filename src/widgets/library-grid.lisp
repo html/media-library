@@ -5,6 +5,9 @@
 (defwidget library-grid (gridedit)
   ())
 
+(defconstant +1.5-mb-in-bytes+ 1572864)
+(defconstant +1-mb-in-bytes+ 1048576)
+
 (defun get-total-compositions-size-used ()
   (with-output-to-string (s)
     (external-program:run "/bin/sh" (list "script/get-disc-size-taken") :output s)
@@ -31,6 +34,64 @@
 	  (when (dataseq-allow-select-p obj)
 	    (apply #'weblocks::render-select-bar obj args)))))
 
+(defun file-size(file)
+  (with-open-file (f file) 
+    (file-length f)))
+
+(defun bytes->megabytes (size)
+  (float (round-to (/ size 1024 1024) 2)))
+
+(defvar *text-2-placeholder* "{{track-url}}")
+
+(defun replace-urls-in-text (text value)
+  (cl-ppcre:regex-replace-all *text-2-placeholder* text value))
+
+; Be careful, function is used in other validation
+(defun text-field-satisfies-p(item)
+  (setf item (normalize-newlines item))
+  (or 
+    (<= (length item) *max-chars-for-description*)
+    (values nil (format nil "Should be less than ~A characters" *max-chars-for-description*))))
+
+(defun text-2-field-satisfies-p (value)
+  (let ((upload-filename (webapp-session-value 'upload-filename)))
+    (if (not upload-filename)
+      (values nil :validate-later)  
+      (progn 
+        (delete-webapp-session-value 'upload-filename)
+        (cond 
+          ((equal upload-filename t) t)
+          ((not (ppcre:scan *text-2-placeholder* value)) 
+           (progn 
+             (values nil 
+                     (format nil "Should include ~A~A~A text for urls displaying" 
+                             (code-char 171) ; left angle quote
+                             *text-2-placeholder* 
+                             (code-char 187) ;right angle quote
+                             ))))
+          (t
+           (setf value 
+                 (replace-urls-in-text 
+                   value
+                   (composition-file-full-url-by-filename 
+                     upload-filename)))
+           (text-field-satisfies-p value)))))))
+
+(defun file-field-satisfies (item)
+  (unless (webapp-session-value 'upload-filename)
+    (setf (webapp-session-value 'upload-filename) t))
+  (cond 
+    ((not item) t)
+    ((let ((size (file-size (merge-pathnames item (get-upload-directory)))))
+       (> size +1.5-mb-in-bytes+)) 
+     (values nil "Size is too big, it should be less than 1.5 megabytes. Less than 1 megabyte would be great"))
+    (item
+      (or 
+        (prog1 
+          (string= "mp3" (string-downcase (pathname-type item)))
+          (setf (webapp-session-value 'upload-filename) item))
+        (values nil "You can only upload mp3 files")))))
+
 (defmacro library-grid-form-view (file-field-required-p &optional display-edit-fields-p)
   `(defview nil (:type form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
@@ -47,11 +108,7 @@
               :label "Text"
               :requiredp t
               :present-as textarea 
-              :satisfies (lambda (item)
-                           (setf item (normalize-newlines item))
-                           (or 
-                             (<= (length item) *max-chars-for-description*)
-                             (values nil (format nil "Should be less than ~A characters" *max-chars-for-description*)))))
+              :satisfies #'text-field-satisfies-p)
             (textarea-initialization 
               :label ""
               :present-as html 
@@ -63,10 +120,10 @@
                                         (with-scripts 
                                           "/pub/scripts/bootstrap-limit.js" 
                                           (lambda ()
-                                            (unless (ps:chain (j-query "textarea") (siblings ".text-counter") length)
-                                              (ps:chain (j-query "<div class=\"text-counter\"/>") (insert-after "textarea")))
+                                            (unless (ps:chain (j-query ".text textarea") (siblings ".text-counter") length)
+                                              (ps:chain (j-query "<div class=\"text-counter\"/>") (insert-after ".text textarea")))
                                             (ps:chain 
-                                              (j-query "textarea")
+                                              (j-query ".text textarea")
                                               (limit 
                                                 (ps:create 
                                                   max-chars (ps:LISP *max-chars-for-description*) 
@@ -83,18 +140,33 @@
                                             (ps:chain 
                                               (j-query ".modal .submit.btn.btn-primary") 
                                               (click (lambda ()
-                                                       (if (not (ps:chain (j-query ".modal textarea") (val) (trim) length))
+                                                       (if (not (ps:chain (j-query ".modal .text textarea") (val) (trim) length))
                                                          (progn 
                                                            (ps:chain (j-query ".modal fieldset .text-error") (remove))
                                                            (ps:chain 
                                                              (j-query ".modal fieldset") 
                                                              (prepend "<div class=\"text-error\"><ul class=\"field-validation-errors\"><li>Текст обязательное поле.</li></ul></div>"))
                                                            false)
-                                                         t))))
-                                            
-                                            ))))))))
+                                                         t))))))))))))
+            (text-2 
+              :label "Text for second rss"
+              :requiredp t
+              :present-as textarea 
+              :satisfies #'text-2-field-satisfies-p 
+              :writer (lambda (value item)
+                        (setf (composition-text-2 item)
+                              (normalize-newlines value))))
             ,@(when display-edit-fields-p 
-                '((mp3-preview 
+                '((file-size 
+                    :label "File size"
+                    :present-as html 
+                    :reader (lambda (item)
+                              (let ((size (file-size (composition-file-name item))))
+                                (yaclml:with-yaclml-output-to-string 
+                                  (<:div :class (format nil "badge badge-~A"
+                                                        (if (> size +1-mb-in-bytes+) "important" "success"))
+                                         (<:as-is (bytes->megabytes size) " mb"))))))
+                  (mp3-preview 
                     :label "Mp3 Preview"
                     :present-as html
                     :reader (lambda (item)
@@ -127,13 +199,10 @@
                                                                     (setf (slot-value item 'file) value)
                                                                     (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
                                                                     (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
+                                                        :reader (lambda (item)
+                                                                  (setf (webapp-session-value 'upload-filename) (slot-value item 'file)))
                                                         :requiredp ,file-field-required-p
-                                                        :satisfies (lambda (item)
-                                                                     (if item
-                                                                       (or 
-                                                                         (string= "mp3" (string-downcase (pathname-type item)))
-                                                                         (values nil "You can only upload mp3 files"))
-                                                                       t)))))
+                                                        :satisfies #'file-field-satisfies)))
 
 (defmethod dataedit-create-drilldown-widget ((grid library-grid) item)
   (make-instance 'dataform

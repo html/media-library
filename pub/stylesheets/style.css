@@ -2,7 +2,7 @@
   margin-left: 160px;
 }
 
-.text textarea {
+.text textarea, .text-2 textarea {
   width: 580px;
   height: 100px;
 }

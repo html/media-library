@@ -3,6 +3,7 @@
 (defclass composition ()
   ((id)
    (text :accessor composition-text)
+   (text-2 :accessor composition-text-2)
    (file :accessor composition-file)
    (item-created-at :initform (get-universal-time))
    (item-updated-at :initform nil)
@@ -18,6 +19,9 @@
 
 (defmethod composition-file-url ((obj composition))
   (format nil "/pub/upload/~A" (slot-value obj 'file)))
+
+(defun composition-file-full-url-by-filename (filename)
+  (format nil "~A/pub/upload/~A" *app-protocol-and-domain* filename))
 
 (defmethod composition-file-param-by-cmd ((obj composition) cmd)
   (handler-case 

@@ -24,6 +24,8 @@
            ;:ignore-default-dependencies t ;; accept the defaults
            :debug t)
 
+(defvar *app-protocol-and-domain*  "http://contentchaos.com")
+
 ;; Top level start & stop scripts
 
 (defun start-media-library (&rest args)

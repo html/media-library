@@ -158,7 +158,7 @@ scales down to 'do-modal' instead."
 (defun last-composition-id ()
   (or (car (sort (mapcar #'weblocks:object-id (weblocks-utils:all-of 'media-library::composition)) #'>)) 0))
 
-(defmethod parse-view-field-value ((parser file-upload-parser) value obj
+(defmethod parse-view-field-value :around ((parser file-upload-parser) value obj
    (view form-view) (field form-view-field) &rest args)
   (declare (ignore args))
   (when (null value)
@@ -246,7 +246,7 @@ scales down to 'do-modal' instead."
                   (string= (http-auth-password) password))))
     (hunchentoot:require-authorization))
   (setf (hunchentoot:header-out :content-type) "text/xml")
-  (let ((app-domain  "http://contentchaos.com"))
+  (let ((app-domain *app-protocol-and-domain*))
     (write-string
     (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>")
       (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
@@ -269,6 +269,39 @@ scales down to 'do-modal' instead."
   (hunchentoot:create-regex-dispatcher 
     "^/feed\\.rss" 
     #'export-rss)
+  weblocks::*dispatch-table*)
+
+(defun export-new-rss ()
+  (unless (multiple-value-bind (user password) (hunchentoot:authorization)
+            (or (not (http-auth-user))
+                (and
+                  (http-auth-password)
+                  (string= (http-auth-user) user)
+                  (string= (http-auth-password) password))))
+    (hunchentoot:require-authorization))
+  (setf (hunchentoot:header-out :content-type) "text/xml")
+  (let ((app-domain *app-protocol-and-domain*))
+    (write-string
+    (cl-who:with-html-output-to-string (s nil :prologue "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>")
+      (:rss :version "2.0" :|xmlns:atom| "http://www.w3.org/2005/Atom"
+       (:channel (:title "Mp3 chaos")
+        (:link (esc app-domain))
+        (:|atom:link| :href "http://contentchaos.com/feed.rss" :rel "self" :type "application/rss+xml")
+        (:description "Content chaos")
+        (loop for model in (weblocks-utils:all-of 'composition :order-by (cons 'id :desc))
+              do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
+                   (htm (:item (:title (esc (slot-value model 'file)))
+                               (:link (esc file-url))
+                               (:guid (str (object-id model)))
+                               (:description (esc (composition-text model)))
+                               (when (composition-created-at-rfc-822 model)
+                                 (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
+    weblocks:*weblocks-output-stream*)))
+
+(push 
+  (hunchentoot:create-regex-dispatcher 
+    "^/new-feed\\.rss" 
+    #'export-new-rss)
   weblocks::*dispatch-table*)
 
 (defun replace-search-values (str)

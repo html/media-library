@@ -76,3 +76,7 @@
 (assert (string= (normalize-newlines "as\ndf") "as\ndf"))
 (assert (string= (normalize-newlines (format nil "as~C\ndf" #\return)) "as\ndf"))
 (assert (string= (normalize-newlines (format nil "as~Cdf" #\return)) "as\ndf"))
+
+(defun round-to (number precision &optional (what #'round))
+  (let ((div (expt 10 precision)))
+    (/ (funcall what (* number div)) div)))
