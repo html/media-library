@@ -20,6 +20,11 @@
 (defmethod composition-file-url ((obj composition))
   (format nil "/pub/upload/~A" (slot-value obj 'file)))
 
+(defmethod composition-file-full-url ((obj composition))
+  (concatenate 'string 
+               *app-protocol-and-domain*
+               (composition-file-url obj)))
+
 (defun composition-file-full-url-by-filename (filename)
   (format nil "~A/pub/upload/~A" *app-protocol-and-domain* filename))
 
