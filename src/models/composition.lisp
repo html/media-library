@@ -1,16 +1,25 @@
 (in-package :media-library)
 
+(defvar *composition-slots-to-clone* '(text 
+                                        text-2 
+                                        file 
+                                        item-created-at 
+                                        cached-artist 
+                                        cached-track-title 
+                                        cached-bit-rate 
+                                        cached-sound-type))
 (defclass composition ()
   ((id)
    (text :accessor composition-text)
-   (text-2 :accessor composition-text-2)
+   (text-2 :accessor composition-text-2 :initform "")
    (file :accessor composition-file)
    (item-created-at :initform (get-universal-time))
    (item-updated-at :initform nil)
    (cached-artist :initform nil :accessor composition-cached-artist)
    (cached-track-title :initform nil :accessor composition-cached-track-title)
    (cached-bit-rate :initform nil :accessor composition-cached-bit-rate)
-   (cached-sound-type :initform nil :accessor composition-cached-sound-type)))
+   (cached-sound-type :initform nil :accessor composition-cached-sound-type)
+   (archived-p :initform nil :accessor composition-archived-p)))
 
 (defmethod composition-file-name ((obj composition))
   (with-slots (file) obj
@@ -53,9 +62,10 @@
       (net.telent.date:universal-time-to-rfc-date item-created-at))))
 
 (defmethod delete-persistent-object :around (store (obj composition))
-  (handler-case 
-    (delete-file (composition-file-name obj))
-    (file-error () (eval `(log:info ,(format nil "Unable to delete ~A" (composition-file-name obj))))))
+  (when (slot-value obj 'file)
+    (handler-case 
+      (delete-file (composition-file-name obj))
+      (file-error () (eval `(log:info ,(format nil "Unable to delete ~A" (composition-file-name obj)))))))
   (call-next-method))
 
 (defun update-all-compositions-cached-data ()
@@ -76,3 +86,41 @@
 
 (defun generate-and-save-composition ()
   (persist-object *default-store* (generate-composition)))
+
+(defun list-compositions-for-export ()
+  (weblocks-utils:find-by-values 
+    'composition 
+    :archived-p nil 
+    :order-by (cons 'id :desc)))
+
+(defun list-compositions-for-archive ()
+  (let* ((30-days (* 30 24 60 60))
+         (time-for-archive (- (get-universal-time) 30-days)))
+    (weblocks-utils:find-by-values 
+      'composition 
+      :archived-p nil
+      :item-created-at (cons time-for-archive 
+                             (lambda (time-for-archive item2)
+                               (< item2 time-for-archive))))))
+
+(defmethod unarchive-composition ((obj composition))
+  "Clones record and removes original"
+  (let ((cloned-instance (make-instance 'composition)))
+    (loop for i in *composition-slots-to-clone* do 
+          (setf (slot-value cloned-instance i) (slot-value obj i)))
+    (setf (slot-value obj 'file) nil)
+    (delete-one obj)
+    (persist-object *default-store* cloned-instance)))
+
+(defmethod archive-composition ((obj composition))
+  (setf (slot-value obj 'archived-p) t))
+
+(defun archive-compositions ()
+  (with-open-file (out "archive-log.txt" :direction :output :if-exists :append :if-does-not-exist :create)
+    (format out "~%Executed archive log at ~A~%" (metatilities:format-date "%d.%m.%Y %H:%M" (get-universal-time)))
+    (loop for i in (list-compositions-for-archive) do 
+          (format out 
+                  "Archiving item with id ~A and create time ~A~%" 
+                  (object-id i)
+                  (archive-composition i)
+                  (metatilities:format-date "%d.%m.%Y %H:%M" (slot-value i 'item-created-at))))))

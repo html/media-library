@@ -32,7 +32,10 @@
   "Starts the application by calling 'start-weblocks' with appropriate arguments."
   (apply #'start-weblocks args)
   (start-webapp 'media-library)
-  (weblocks-strings-translation-app:start-weblocks-strings-translation-app :store *default-store*))
+  (weblocks-strings-translation-app:start-weblocks-strings-translation-app :store *default-store*)
+  (cl-cron:make-cron-job #'archive-compositions :boot-only t)
+  (cl-cron:make-cron-job #'archive-compositions)
+  (cl-cron:start-cron))
 
 (defun stop-media-library ()
   "Stops the application by calling 'stop-weblocks'."

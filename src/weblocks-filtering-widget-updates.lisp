@@ -1,7 +1,8 @@
 (in-package :weblocks-filtering-widget)
 
 (defwidget custom-filtering-widget (filtering-widget)
-  ((simple-form-view :initform t :accessor custom-filtering-widget-simple-form-view-p)))
+  ((simple-form-view :initform t :accessor custom-filtering-widget-simple-form-view-p)
+   (display-archived-p :initform nil)))
 
 (defmethod render-filter-form ((widget custom-filtering-widget))
   (render-widget (get-filter-form widget)))
@@ -16,6 +17,7 @@
                       (yaclml:with-yaclml-output-to-string 
                         (<:h1 
                           (<:as-is "{{form-title}}"))
+                        (<:hr)
                         (<:as-is "{{{form-validation-summary}}}")
                         (<:div :class "pull-left"
                                (<:as-is "{{{form-body}}}")) 
@@ -192,4 +194,64 @@
                  (str (format nil "~A" (cdr validation-error)))))))
        (:div :style "clear:both")))))
 
+(defun calc-filters (widget)
+  (let ((archive-filter (list 
+                          :value (list 
+                                   :field :archived-p
+                                   :compare-type "equal"
+                                   :compare-value (slot-value widget 'display-archived-p))
+                          :and nil 
+                          :or nil)))
+    (with-slots (filters) widget
+      (if filters 
+        (progn 
+          (setf (getf filters :and) (list archive-filter))
+          filters)
+        archive-filter))))
 
+(defmethod on-query-function ((widget filtering-widget))
+  (lambda (obj order limit &key countp)
+    (let ((values 
+            (if (clsql-poveredp :store (dataseq-class-store obj))
+              (funcall 
+                (if countp #'count-persistent-objects #'find-persistent-objects)
+                (dataseq-class-store obj)
+                (dataseq-data-class obj)
+                :where (compare-sql-expression (slot-value widget 'filters))
+                :range limit
+                :order-by order
+                :store (dataseq-class-store obj))
+              (funcall 
+                (if countp #'count-by #'find-by)
+                (dataseq-data-class obj)
+                (lambda (item)
+                  (let ((return 
+                          (compare (calc-filters widget) item 
+                                   (append 
+                                     (form-fields-accessors-list widget)
+                                     (list :archived-p #'media-library::composition-archived-p)))))
+                    return))
+                :order-by order
+                :range limit 
+                :store (dataseq-class-store obj)))))
+      values)))
+
+(defun compare-single-value (filter-value model-instance &optional (compare-functions (getf *compare-functions* :case-insensitive)))
+  (declare (special *accessors*))
+  (let* ((compare-function-key (intern (string-upcase (getf filter-value :compare-type)) "KEYWORD"))
+         (compare-func (or (getf compare-functions compare-function-key)
+                           (error (format nil "Function ~A not found in compare-functions" compare-function-key))))
+         (filter-accessor (getf *accessors* (getf filter-value :field)))
+         (return 
+           (if filter-accessor
+             (funcall 
+               compare-func
+               (handler-case 
+                 (let ((value (funcall filter-accessor model-instance))) 
+                   (if (stringp value)
+                     value
+                     (write-to-string value)))
+                 (unbound-slot () nil)) 
+               (getf filter-value :compare-value))
+             nil)))
+    return)) 

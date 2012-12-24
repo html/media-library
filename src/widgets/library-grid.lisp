@@ -243,6 +243,11 @@
         (apply #'dataseq-render-operations obj args)))))
   (call-next-method))
 
+(defun displaying-archived-records-p ()
+  (slot-value (first 
+                (get-widgets-by-type 'weblocks-filtering-widget::custom-filtering-widget))
+              'weblocks-filtering-widget::display-archived-p))
+
 (defmethod with-table-view-body-row ((view table-view) obj (widget library-grid) &rest args
 				     &key alternp &allow-other-keys)
   (if (and (dataseq-allow-drilldown-p widget)
@@ -265,7 +270,14 @@
                                  (flash-message (dataseq-flash widget)
                                                 (format nil "Deleted item with id ~A." id))
                                  (delete-one item)) 
-                               (mark-dirty widget))))))
+                               (mark-dirty widget)))))
+          (restore-action (make-action 
+                            (lambda (&rest args)
+                              (let ((id (object-id obj))
+                                    (new-id (object-id (unarchive-composition obj))))
+                                (flash-message (dataseq-flash widget)
+                                               (format nil "Restored from archive item with id ~A, new id is ~A." id new-id))) 
+                              (mark-dirty widget)))))
 	(safe-apply (sequence-view-row-prefix-fn view) view obj args)
 	(with-html
     (:tr :class (when (or alternp drilled-down-p)
@@ -277,13 +289,16 @@
          (:td :style "white-space:nowrap;"
           (:div :class "btn-group"
            (when (not drilled-down-p)
-             (render-link row-action "<i class=\"icon-pencil\"></i>" :class "btn btn-small btn-info")
-             (htm
-               (:a :class  "btn btn-small btn-danger"
-                :href (add-get-param-to-url (make-action-url delete-action) "id" (write-to-string (object-id obj))) :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: \"~A\"}); return false;"
-                                           delete-action (session-name-string-pair) (object-id obj))
-                "<i class=\"icon-trash\"></i>" 
-                )))))))
+             (if (displaying-archived-records-p)
+               (render-link restore-action "<i class=\"icon-briefcase\"></i> restore" :class "btn btn-small btn-info")
+               (progn 
+                 (render-link row-action "<i class=\"icon-pencil\"></i>" :class "btn btn-small btn-info")  
+                 (htm
+                   (:a :class  "btn btn-small btn-danger"
+                    :href (add-get-param-to-url (make-action-url delete-action) "id" (write-to-string (object-id obj))) :onclick (format nil "initiateActionWithArgs(\"~A\", \"~A\", {id: \"~A\"}); return false;"
+                                                                                                                                         delete-action (session-name-string-pair) (object-id obj))
+                    "<i class=\"icon-trash\"></i>" 
+                    )))))))))
 	(safe-apply (sequence-view-row-suffix-fn view) view obj args))
       (call-next-method)))
 

@@ -254,7 +254,7 @@ scales down to 'do-modal' instead."
         (:link (esc app-domain))
         (:|atom:link| :href (concatenate 'string *app-protocol-and-domain* "/feed.rss") :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
-        (loop for model in (weblocks-utils:all-of 'composition :order-by (cons 'id :desc))
+        (loop for model in (list-compositions-for-export)
               do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
                    (htm (:item (:title (esc (slot-value model 'file)))
                                (:link (esc file-url))
@@ -288,7 +288,7 @@ scales down to 'do-modal' instead."
         (:link (esc app-domain))
         (:|atom:link| :href (concatenate 'string *app-protocol-and-domain* "/new-feed.rss") :rel "self" :type "application/rss+xml")
         (:description "Content chaos")
-        (loop for model in (weblocks-utils:all-of 'composition :order-by (cons 'id :desc))
+        (loop for model in (list-compositions-for-export)
               do (let ((file-url (format nil "~A~A" app-domain (composition-file-url model))))
                    (htm (:item (:title (esc (slot-value model 'file)))
                                (:link (esc file-url))
@@ -392,6 +392,12 @@ scales down to 'do-modal' instead."
                 (slot-value object 'password)))
             :view 'login-view))
 
+(defun change-search-value (value)
+  (lambda (&rest args)
+    (mark-dirty (root-widget))
+    (let ((filtering-widget (first (get-widgets-by-type 'weblocks-filtering-widget::custom-filtering-widget))))
+      (setf (slot-value filtering-widget 'weblocks-filtering-widget::display-archived-p) value))))
+
 (defun/cc admin-page (&rest args)
   (let* ((grid (make-library-grid))
          (records-count-widget 
@@ -441,6 +447,20 @@ scales down to 'do-modal' instead."
                     (with-yaclml 
                       (<:h2 "Compositions")))
                   filtering-widget
+                  (lambda (&rest args)
+                    (with-yaclml 
+                      (<:ul :class "nav nav-pills"
+                            (loop for (title value) in 
+                                  (list 
+                                    (list "Normal View" nil)
+                                    (list "Archived" t)) do
+                                  (<:li :class 
+                                        (if (equal 
+                                              value
+                                              (displaying-archived-records-p))
+                                          "active")
+                                        (render-link 
+                                          (change-search-value value) title))))))
                   records-count-widget
                   grid 
                   (lambda (&rest args)
