@@ -100,6 +100,11 @@
             (item-updated-at :present-as hidden 
                              :writer (lambda (value item)
                                        (setf (slot-value item 'item-updated-at) (get-universal-time))))
+            (item-archive-at 
+              :present-as hidden 
+              :writer (lambda (value item)
+                        (set-archive-time item)))
+            (archived-p :present-as hidden)
             (cached-artist :label "Artist" :present-as input) 
             (cached-track-title :label "Track Title" :present-as input)
             (cached-sound-type :present-as hidden :writer (lambda (&rest args) (declare (ignore args))))
@@ -187,7 +192,13 @@
                                                               :reader (lambda (item)
                                                                         (cl-ppcre:regex-replace-all "\\n"
                                                                                                     (get-file-id3-info (composition-file-name item))
-                                                                                                    "<br/>"))))) 
+                                                                                                    "<br/>")))
+                                                            (item-archive-at-display :present-as html 
+                                                                                     :label "Will be archived at"
+                                                                                     :reader (lambda (item)
+                                                                                               (metatilities:format-date 
+                                                                                                 "%d.%m.%Y %H:%M" 
+                                                                                                 (slot-value item 'item-archive-at)))))) 
                                                       (file 
                                                         :label "File"
                                                         :present-as ajax-file-upload 

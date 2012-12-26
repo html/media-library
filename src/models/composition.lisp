@@ -8,6 +8,9 @@
                                         cached-track-title 
                                         cached-bit-rate 
                                         cached-sound-type))
+
+(defconstant +30-days+ (* 30 24 60 60))
+
 (defclass composition ()
   ((id)
    (text :accessor composition-text)
@@ -19,7 +22,8 @@
    (cached-track-title :initform nil :accessor composition-cached-track-title)
    (cached-bit-rate :initform nil :accessor composition-cached-bit-rate)
    (cached-sound-type :initform nil :accessor composition-cached-sound-type)
-   (archived-p :initform nil :accessor composition-archived-p)))
+   (archived-p :initform nil :accessor composition-archived-p)
+   (item-archive-at :initform nil)))
 
 (defmethod composition-file-name ((obj composition))
   (with-slots (file) obj
@@ -94,12 +98,11 @@
     :order-by (cons 'id :desc)))
 
 (defun list-compositions-for-archive ()
-  (let* ((30-days (* 30 24 60 60))
-         (time-for-archive (- (get-universal-time) 30-days)))
+  (let* ((now (get-universal-time)))
     (weblocks-utils:find-by-values 
       'composition 
       :archived-p nil
-      :item-created-at (cons time-for-archive 
+      :item-archive-at (cons now 
                              (lambda (time-for-archive item2)
                                (< item2 time-for-archive))))))
 
@@ -109,6 +112,7 @@
     (loop for i in *composition-slots-to-clone* do 
           (setf (slot-value cloned-instance i) (slot-value obj i)))
     (setf (slot-value obj 'file) nil)
+    (set-archive-time cloned-instance)
     (delete-one obj)
     (persist-object *default-store* cloned-instance)))
 
@@ -124,3 +128,8 @@
                   (object-id i)
                   (archive-composition i)
                   (metatilities:format-date "%d.%m.%Y %H:%M" (slot-value i 'item-created-at))))))
+
+(defmethod set-archive-time ((item composition))
+  (with-slots (item-archive-at) item
+    (unless item-archive-at
+      (setf item-archive-at (+ (get-universal-time) +30-days+))))) 
