@@ -194,7 +194,10 @@
                  (str (format nil "~A" (cdr validation-error)))))))
        (:div :style "clear:both")))))
 
-(defun calc-filters (widget)
+(defmethod calc-filters ((widget filtering-widget))
+  (slot-value widget 'filters))
+
+(defmethod calc-filters ((widget custom-filtering-widget))
   (let ((archive-filter (list 
                           :value (list 
                                    :field :archived-p
