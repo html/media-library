@@ -255,9 +255,10 @@
   (call-next-method))
 
 (defun displaying-archived-records-p ()
-  (slot-value (first 
-                (get-widgets-by-type 'weblocks-filtering-widget::custom-filtering-widget))
-              'weblocks-filtering-widget::display-archived-p))
+  (let ((widget (first 
+                  (get-widgets-by-type 'weblocks-filtering-widget::custom-filtering-widget))))
+    (and widget 
+         (slot-value widget 'weblocks-filtering-widget::display-archived-p))))
 
 (defmethod with-table-view-body-row ((view table-view) obj (widget library-grid) &rest args
 				     &key alternp &allow-other-keys)
