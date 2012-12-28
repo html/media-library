@@ -133,28 +133,6 @@ inserted into the page to redraw the dialog."
             (get-output-stream-string *weblocks-output-stream*))
           (handle-http-error app (return-code*)))))))
 
-(defun/cc do-dialog (title callee &key css-class close)
-  (declare (special *on-ajax-complete-scripts*))
-  "Presents 'callee' to the user in a modal dialog, saves the
-continuation, and returns from the delimited computation. When
-'callee' answers, removes the modal interface and reactives the
-computation. If the modal interface isn't available, automatically
-scales down to 'do-modal' instead."
-  (assert (stringp title))
-  (if (ajax-request-p)
-      (prog2
-	  (when (current-dialog)
-	    (error "Multiple dialogs not allowed."))
-	  (call callee (lambda (new-callee)
-			 (setf (current-dialog) (make-dialog :title title
-							     :widget new-callee
-							     :close close
-							     :css-class css-class))
-                         (send-script (ps* (make-dialog-js title new-callee css-class close)) :before-load)))
-	(setf (current-dialog) nil)
-        (send-script (ps (remove-dialog))))
-      (do-modal title callee :css-class css-class)))
-
 (defun last-composition-id ()
   (or (car (sort (mapcar #'weblocks:object-id (weblocks-utils:all-of 'media-library::composition)) #'>)) 0))
 
