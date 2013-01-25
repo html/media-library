@@ -46,3 +46,9 @@
 [submodule "bootstrap-timepicker"]
 	path = bootstrap-timepicker
 	url = git://github.com/jdewit/bootstrap-timepicker.git
+[submodule "gists/4637963"]
+	path = gists/4637963
+	url = git://gist.github.com/4637963.git
+[submodule "gists/4444927"]
+	path = gists/4444927
+	url = git://gist.github.com/4444927.git

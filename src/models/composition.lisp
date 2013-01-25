@@ -23,7 +23,8 @@
    (cached-bit-rate :initform nil :accessor composition-cached-bit-rate)
    (cached-sound-type :initform nil :accessor composition-cached-sound-type)
    (archived-p :initform nil :accessor composition-archived-p)
-   (item-archive-at :initform nil)))
+   (item-archive-at :initform nil)
+   (pub-date :initform nil :accessor composition-pub-date)))
 
 (defmethod composition-file-name ((obj composition))
   (with-slots (file) obj
@@ -64,6 +65,11 @@
   (with-slots (item-created-at) obj
     (when item-created-at
       (net.telent.date:universal-time-to-rfc-date item-created-at))))
+
+(defmethod composition-pub-date-rfc-822 ((obj composition))
+  (with-slots (pub-date) obj
+    (when pub-date
+      (net.telent.date:universal-time-to-rfc-date pub-date))))
 
 (defmethod delete-persistent-object :around (store (obj composition))
   (when (slot-value obj 'file)

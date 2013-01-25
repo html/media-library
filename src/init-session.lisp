@@ -234,8 +234,8 @@ inserted into the page to redraw the dialog."
                                (:guid (esc file-url))
                                (:description (esc (composition-text model)))
                                (:enclosure :url file-url :length (with-open-file (in (composition-file-name model)) (file-length in)) :type "audio/mp3")
-                               (when (composition-created-at-rfc-822 model)
-                                 (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
+                               (when (composition-pub-date-rfc-822 model)
+                                 (str (format nil "<pubDate>~A</pubDate>" (composition-pub-date-rfc-822 model)))))))))))
     weblocks:*weblocks-output-stream*)))
 
 (push 
@@ -267,8 +267,8 @@ inserted into the page to redraw the dialog."
                                (:link (esc file-url))
                                (:guid (str (object-id model)))
                                (:description (esc (replace-urls-in-text (composition-text-2 model) (composition-file-full-url model))))
-                               (when (composition-created-at-rfc-822 model)
-                                 (str (format nil "<pubDate>~A</pubDate>" (composition-created-at-rfc-822 model)))))))))))
+                               (when (composition-pub-date-rfc-822 model)
+                                 (str (format nil "<pubDate>~A</pubDate>" (composition-pub-date-rfc-822 model)))))))))))
     weblocks:*weblocks-output-stream*)))
 
 (push 

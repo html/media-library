@@ -92,11 +92,25 @@
           (setf (webapp-session-value 'upload-filename) item))
         (values nil "You can only upload mp3 files")))))
 
+(load "src/weblocks-table-view-with-ordered-fields.lisp")
+
+(defclass advanced-form-view (form-view)
+  ((fields-order :initarg :fields-order :initform nil)))
+
+(defclass advanced-form-view-field (form-view-field)
+  ())
+
+(defclass advanced-form-scaffold (table-scaffold)
+  ())
+
+(load "src/weblocks-bootstrap-date-entry-presentation.lisp")
+
 (defmacro library-grid-form-view (file-field-required-p &optional display-edit-fields-p)
-  `(defview nil (:type form :inherit-from '(:scaffold composition)
+  `(defview nil (:type advanced-form :inherit-from '(:scaffold composition)
                  :enctype "multipart/form-data"
                  :use-ajax-p t 
-                 :buttons '((:submit . "Submit") (:cancel . "Cancel")))
+                 :buttons '((:submit . "Submit") (:cancel . "Cancel"))
+                 :fields-order '(:text :text-2 :pub-date :archived-p :textarea-initialization :file-size :mp3-preview :file))
             (item-updated-at :present-as hidden 
                              :writer (lambda (value item)
                                        (setf (slot-value item 'item-updated-at) (get-universal-time))))
@@ -104,6 +118,14 @@
               :present-as hidden 
               :writer (lambda (value item)
                         (set-archive-time item)))
+            (pub-date 
+              :label "Publication date"
+              :present-as bootstrap-date-entry 
+              :reader (lambda(item)
+                        (or 
+                          (slot-value item 'pub-date)
+                          (get-universal-time)))
+              :parse-as bootstrap-date)
             (archived-p :present-as hidden)
             (cached-artist :label "Artist" :present-as input) 
             (cached-track-title :label "Track Title" :present-as input)
@@ -199,21 +221,21 @@
                                                                                                (metatilities:format-date 
                                                                                                  "%d.%m.%Y %H:%M" 
                                                                                                  (slot-value item 'item-archive-at)))))) 
-                                                      (file 
-                                                        :label "File"
-                                                        :present-as ajax-file-upload 
-                                                        :parse-as (ajax-file-upload 
-                                                                    :upload-directory (get-upload-directory)
-                                                                    :file-name :browser-with-cyrillic-transliteration)
-                                                        :writer (lambda (value item)
-                                                                  (when value 
-                                                                    (setf (slot-value item 'file) value)
-                                                                    (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
-                                                                    (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
-                                                        :reader (lambda (item)
-                                                                  (setf (webapp-session-value 'upload-filename) (slot-value item 'file)))
-                                                        :requiredp ,file-field-required-p
-                                                        :satisfies #'file-field-satisfies)))
+                                           (file 
+                                             :label "File"
+                                             :present-as ajax-file-upload 
+                                             :parse-as (ajax-file-upload 
+                                                         :upload-directory (get-upload-directory)
+                                                         :file-name :browser-with-cyrillic-transliteration)
+                                             :writer (lambda (value item)
+                                                       (when value 
+                                                         (setf (slot-value item 'file) value)
+                                                         (setf (slot-value item 'cached-bit-rate) (composition-bit-rate item))
+                                                         (setf (slot-value item 'cached-sound-type) (composition-sound-type item))))
+                                             :reader (lambda (item)
+                                                       (setf (webapp-session-value 'upload-filename) (slot-value item 'file)))
+                                             :requiredp ,file-field-required-p
+                                             :satisfies #'file-field-satisfies)))
 
 (defmethod dataedit-create-drilldown-widget ((grid library-grid) item)
   (make-instance 'dataform
