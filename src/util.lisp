@@ -80,3 +80,9 @@
 (defun round-to (number precision &optional (what #'round))
   (let ((div (expt 10 precision)))
     (/ (funcall what (* number div)) div)))
+
+(defmacro with-yaclml (&body body)
+  "A wrapper around cl-yaclml with-yaclml-stream macro."
+  `(yaclml:with-yaclml-stream *weblocks-output-stream*
+     ,@body))
+

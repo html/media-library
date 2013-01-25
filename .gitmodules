@@ -40,3 +40,9 @@
 [submodule ".quicklisp/local-projects/weblocks-filtering-widget"]
 	path = .quicklisp/local-projects/weblocks-filtering-widget
 	url = git://github.com/html/weblocks-filtering-widget.git
+[submodule "bootstrap-datepicker"]
+	path = bootstrap-datepicker
+	url = git://github.com/eternicode/bootstrap-datepicker.git
+[submodule "bootstrap-timepicker"]
+	path = bootstrap-timepicker
+	url = git://github.com/jdewit/bootstrap-timepicker.git

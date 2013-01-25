@@ -184,11 +184,6 @@ inserted into the page to redraw the dialog."
 (log:config :daily "pub/log.txt")
 (setf weblocks:*max-raw-input-length* 500)
 
-(defmacro with-yaclml (&body body)
-  "A wrapper around cl-yaclml with-yaclml-stream macro."
-  `(yaclml:with-yaclml-stream *weblocks-output-stream*
-     ,@body))
-
 ;; Define callback function to initialize new sessions
 (defun get-upload-directory ()
   (merge-pathnames 
